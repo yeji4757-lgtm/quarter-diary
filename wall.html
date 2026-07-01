@@ -600,8 +600,9 @@ function openModal(fi, captureMode, morphFrom){
     modal.classList.add('open');
     modalPhoto.style.transition='none';
     modalPhoto.style.filter=GRAY; modalPhoto.style.opacity='.9';
-    if(!reduce && morphFrom){
-      // ---- FLIP morph: 토출 필름에서 중앙으로 확대(움직임) — reduce 아닐 때만
+    if(morphFrom){
+      // ---- FLIP morph: 토출 필름 위치에서 중앙으로 확대.
+      // 저전력/reduce에서도 그대로 재생 — 팝업이 '팍' 뜨지 않고 필름에서 스르륵 확대되게.
       const tr=modalCard.getBoundingClientRect();
       const dx=(morphFrom.left+morphFrom.width/2)-(tr.left+tr.width/2);
       const dy=(morphFrom.top+morphFrom.height/2)-(tr.top+tr.height/2);
@@ -613,20 +614,19 @@ function openModal(fi, captureMode, morphFrom){
       modalCard.style.transition='transform .82s cubic-bezier(.33,0,.15,1)';
       modalCard.style.transform='translate(0px,0px) scale(1)';
     }else{
-      modalCard.style.transition=''; modalCard.style.transform='';   // CSS 스케일-인(.5s)에 맡김
+      modalCard.style.transition=''; modalCard.style.transform='';
       void modalPhoto.offsetWidth;
     }
-    const settle    = reduce ? 40  : (morphFrom ? 660 : 420);
-    const devDur    = reduce ? 0.9 : 1.6;
-    const revealGap = reduce ? 700 : 1550;
+    // 팝업 연출(모프+현상+등장)은 reduce여도 동일하게 재생
+    const settle = morphFrom ? 660 : 420;
     setTimeout(()=>{
-      modalPhoto.style.transition='filter '+devDur+'s ease, opacity '+devDur+'s ease';
+      modalPhoto.style.transition='filter 1.6s ease, opacity 1.6s ease';
       void modalPhoto.offsetWidth;
       mp.classList.remove('dev');
       modalPhoto.style.filter=COLOR; modalPhoto.style.opacity='1';
-      if(modalCap) setTimeout(()=>modalCap.classList.remove('pending'), reduce?250:500);
+      if(modalCap) setTimeout(()=>modalCap.classList.remove('pending'), 500);
     }, settle);
-    setTimeout(()=>revealBlock.classList.add('show'), settle+revealGap);
+    setTimeout(()=>revealBlock.classList.add('show'), settle+1550);
   }else{
     // revisiting from the wall: already developed
     if(modalCap) modalCap.classList.remove('pending');
