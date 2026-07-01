@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>기획자의 독서 — 2분기 한 컷 올리기</title>
+<title>2분기 쿼터다이어리 - 업로드 페이지</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%230c0e10'/%3E%3Crect x='24' y='20' width='52' height='60' rx='4' fill='%23fefefe'/%3E%3Crect x='30' y='26' width='40' height='38' rx='2' fill='%238fc9bc'/%3E%3Ccircle cx='50' cy='45' r='9' fill='%230c0e10' opacity='.35'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquareNeo@1.0/nanumsquareneo.css" rel="stylesheet">
 <style>
@@ -19,7 +20,7 @@ body{font-family:'NanumSquareNeo','Helvetica Neue',-apple-system,'Apple SD Gothi
   color:var(--ink);min-height:100dvh;
   padding:max(30px,env(safe-area-inset-top)) 22px calc(38px + env(safe-area-inset-bottom));
   display:flex;justify-content:center;}
-.wrap{width:100%;max-width:440px;display:flex;flex-direction:column;}
+.wrap{width:100%;max-width:440px;min-height:calc(100dvh - 30px - 38px - env(safe-area-inset-top) - env(safe-area-inset-bottom));display:flex;flex-direction:column;}
 
 .eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.4em;text-transform:uppercase;color:#a49c90;}
 .eyebrow b{color:var(--mint);font-weight:800;}
@@ -77,7 +78,7 @@ h1 span{color:var(--mint);}
 .mode .dot{width:7px;height:7px;border-radius:50%;flex:none;}
 .mode.local .dot{background:#e3c98a;} .mode.shared .dot{background:var(--mint);}
 
-.foot{margin-top:44px;text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.42em;
+.foot{margin-top:auto;padding-top:44px;text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.42em;
   text-transform:uppercase;color:#5f594f;}
 
 input[type=file]{display:none;}
@@ -85,14 +86,14 @@ input[type=file]{display:none;}
 /* 첨부 후 위치 조정(폴라로이드 프레임에 맞춰 초점 이동) */
 .crop{display:none;flex-direction:column;align-items:center;gap:11px;margin-top:18px;}
 .crop.on{display:flex;animation:doneIn .4s ease;}
-.crop-frame{position:relative;width:210px;aspect-ratio:88/107;border-radius:3px 3px 6px 6px;
-  background:linear-gradient(168deg,#fdfcf8,#f1efe8 60%,#eae7df);
+.crop-frame{position:relative;width:210px;aspect-ratio:88/107;border-radius:2px;
+  background:linear-gradient(170deg,#fefefe,#f1f0eb);
   box-shadow:0 20px 40px -18px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.9) inset;}
-/* image window matches the wall's polaroid window EXACTLY (same insets → same 0.942 ratio),
-   so whatever focal point the member sets shows identically on the retro wall */
-.crop-img{position:absolute;top:4.1%;left:5%;right:5%;bottom:17.3%;border-radius:1px;background:#1a1d1f;
+/* image window matches the camera popup's polaroid window EXACTLY:
+   padding 5% 5% 21% 5% (same insets → same ratio & shape) */
+.crop-img{position:absolute;top:5%;left:5%;right:5%;bottom:21%;border-radius:1px;background:#1a1d1f;
   background-size:cover;background-position:50% 50%;
-  cursor:grab;touch-action:none;box-shadow:0 0 0 1px rgba(0,0,0,.1) inset;}
+  cursor:grab;touch-action:none;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.3) inset;}
 .crop-img.dragging{cursor:grabbing;}
 .crop-hint{font-size:11px;color:var(--ink-faint);letter-spacing:.03em;}
 
@@ -113,9 +114,10 @@ input[type=file]{display:none;}
 .sched{margin-top:34px;border:1px solid rgba(143,201,188,.28);border-radius:4px;
   background:rgba(47,143,120,.08);padding:32px 22px;}
 .sched .lab{font-size:9.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--mint);}
-.sched .cue{margin-top:12px;font-size:14px;font-weight:700;color:#f0ede6;line-height:1.5;letter-spacing:.005em;}
-.sched .when{margin-top:20px;padding-top:20px;border-top:1px solid rgba(143,201,188,.18);
+.sched .cue{font-size:11.5px;font-weight:400;color:var(--ink-faint);line-height:1.6;letter-spacing:.02em;}
+.sched .when{margin-top:16px;padding-top:16px;border-top:1px solid rgba(143,201,188,.18);
   display:flex;flex-direction:column;gap:9px;}
+.sched .when .lab{margin-bottom:3px;}
 .sched .when .d{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:.02em;}
 .sched .when .t{font-size:12px;font-weight:400;color:var(--ink-soft);letter-spacing:.04em;}
 .done .again{margin-top:24px;text-align:center;}
@@ -167,17 +169,12 @@ input[type=file]{display:none;}
     </div>
     <div class="field">
       <label>음악 링크</label>
-      <input type="url" id="inMusic" placeholder="유튜브 링크를 찾아 넣어주세요." autocomplete="off" inputmode="url">
+      <input type="url" id="inMusic" placeholder="유튜브 링크를 복사한 뒤 붙여넣기 해주세요." autocomplete="off" inputmode="url">
     </div>
   </div>
 
   <button type="submit" class="submit" id="submit" disabled>다 골랐어요!</button>
   <div class="msg" id="msg"></div>
-
-  <div class="mode local" id="mode">
-    <span class="dot"></span>
-    <span id="modeText">로컬 미리보기 — 지금은 이 브라우저에서만 처리됩니다.</span>
-  </div>
 
   <div class="foot">기획자의 독서</div>
 </form>
@@ -189,9 +186,9 @@ input[type=file]{display:none;}
   <p class="p">계속해서 쿼터 다이어리를 쌓아나가면<br>2026년 연말에 회고하기 좋겠죠?</p>
 
   <div class="sched">
-    <div class="lab">일정 안내</div>
     <div class="cue">2분기 쿼터 다이어리 일정을 저장해두세요.</div>
     <div class="when">
+      <div class="lab">일정 안내</div>
       <span class="d" id="schedDate">날짜 미정</span>
       <span class="t" id="schedTime"></span>
     </div>
@@ -262,9 +259,7 @@ function applyPos(){ const p=posX.toFixed(1)+'% '+posY.toFixed(1)+'%';
   cropImg.style.backgroundPosition=p; preview.style.backgroundPosition=p; }
 
 if(SHARED){
-  const m=document.getElementById('mode');
-  m.className='mode shared';
-  document.getElementById('modeText').textContent='공유 모드 — 올린 사진이 모두의 회고 벽에 함께 걸립니다.';
+  // 공유 모드 — 별도 배너 없이 그대로 사용
 }
 
 function initSupabase(){

@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Polaroid — 한 컷의 분기</title>
+<title>2분기 쿼터다이어리 - 공유 페이지</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%230c0e10'/%3E%3Crect x='24' y='20' width='52' height='60' rx='4' fill='%23fefefe'/%3E%3Crect x='30' y='26' width='40' height='38' rx='2' fill='%238fc9bc'/%3E%3Ccircle cx='50' cy='45' r='9' fill='%230c0e10' opacity='.35'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -126,11 +127,13 @@ body.flashpop .flashglow{opacity:1;transform:scale(1.6);transition:opacity .04s 
   font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;font-weight:400;
   font-size:clamp(8px,calc(var(--pw,120px) * .072),12px);letter-spacing:.01em;color:#4a453e;
   background:linear-gradient(180deg,#fafaf7,#f1f0eb);line-height:1.15;}
-/* washi tape: a thin horizontal strip, tilted so the asymmetry reads left-right */
-.pinned .tape{position:absolute;top:-4%;left:50%;transform:translateX(-50%) rotate(-4deg);
-  width:42%;height:8.5%;background:linear-gradient(90deg,rgba(143,201,188,.7),rgba(143,201,188,.82),rgba(143,201,188,.68));
-  border-left:1px solid rgba(47,143,120,.28);border-right:1px solid rgba(47,143,120,.28);
-  box-shadow:0 2px 5px rgba(0,0,0,.16);}
+/* washi tape: top & bottom edges stay parallel(horizontal); left & right
+   edges are slightly slanted & asymmetric via clip-path */
+.pinned .tape{position:absolute;top:-3.5%;left:50%;transform:translateX(-50%);
+  width:44%;height:9%;
+  background:linear-gradient(90deg,rgba(143,201,188,.9),rgba(159,209,197,.95),rgba(143,201,188,.88));
+  clip-path:polygon(6% 0, 100% 0, 94% 100%, 0 100%);
+  box-shadow:0 2px 5px rgba(0,0,0,.18);}
 
 .eyebrow{position:fixed;top:max(20px,env(safe-area-inset-top));left:0;right:0;z-index:57;
   text-align:center;font-size:11px;font-weight:800;letter-spacing:.42em;text-transform:uppercase;color:#a49c90;transition:opacity .6s ease;}
@@ -209,7 +212,7 @@ body.cine #shutter::after{animation:none;opacity:0;}
   opacity:0;pointer-events:none;transition:opacity 1s ease .4s;}
 .wall-title.show{opacity:1;}
 .wall-title .big{font-size:clamp(20px,6vw,34px);letter-spacing:.08em;color:#f2efe8;font-weight:300;}
-.wall-title .sub{margin-top:8px;font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:var(--mint);}
+.wall-title .sub{margin-top:18px;font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:var(--mint);}
 .wall-foot{position:fixed;left:0;right:0;bottom:max(20px,env(safe-area-inset-bottom));z-index:8;
   text-align:center;font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:#7d766b;
   opacity:0;pointer-events:none;transition:opacity 1s ease .6s;}
@@ -217,16 +220,17 @@ body.cine #shutter::after{animation:none;opacity:0;}
 
 /* ===== POPUP (enlarged photo + music) ===== */
 #modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;
-  padding:24px;}
+  padding:24px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 #modal::before{content:"";position:fixed;inset:0;z-index:0;
   background:rgba(8,10,12,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   opacity:0;transition:opacity .55s ease;}
 #modal.open{display:flex;}
 #modal.open::before{opacity:1;}
-.modal-card{position:relative;z-index:1;width:fit-content;max-width:min(88vw,420px);margin:0 auto;
+.modal-card{position:relative;z-index:1;width:fit-content;max-width:min(88vw,420px);margin:auto;
+  flex:0 0 auto;
   transform:scale(.94);transition:transform .5s cubic-bezier(.22,1,.36,1);}
 #modal.open .modal-card{transform:scale(1);}
-.modal-photo{position:relative;width:min(86vw,400px,60vh);aspect-ratio:88/107;border-radius:6px;
+.modal-photo{position:relative;width:min(84vw,380px,46vh);aspect-ratio:88/107;border-radius:2px;
   padding:5% 5% 21% 5%;background:linear-gradient(170deg,#fefefe,#f1f0eb);
   box-shadow:0 30px 60px -16px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.9) inset;}
 .modal-photo .img{position:relative;width:100%;height:100%;border-radius:1px;overflow:hidden;
@@ -239,23 +243,42 @@ body.cine #shutter::after{animation:none;opacity:0;}
   background:radial-gradient(circle at 50% 45%, rgba(20,40,38,0) 0%, rgba(16,33,31,.8) 72%);
   opacity:0;transition:opacity 1.7s ease;}
 .modal-photo.dev .img::after{opacity:1;}
-.modal-photo .cap{position:absolute;left:0;right:0;bottom:0;height:21%;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding-top:6px;
-  font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;}
-.modal-photo .cap .q{font-size:19px;font-weight:600;color:#3a352e;letter-spacing:.02em;}
+.modal-photo .cap{position:absolute;left:0;right:0;top:82.7%;bottom:0;padding:0 9%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;
+  opacity:1;transform:translateY(0);transition:opacity 1.5s ease, transform 1.5s ease;}
+.modal-photo .cap.pending{opacity:0;transform:translateY(8px);}
+.modal-photo .cap .q{font-size:19px;font-weight:600;color:#3a352e;letter-spacing:.02em;
+  text-align:center;line-height:1.35;text-wrap:balance;word-break:keep-all;overflow-wrap:normal;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
 .modal-photo .cap .d{font-size:12px;font-weight:400;color:#9a938a;letter-spacing:.16em;}
 /* music control row */
 .music{margin-top:16px;display:flex;align-items:center;justify-content:center;gap:12px;}
-.music button{display:flex;align-items:center;gap:9px;cursor:pointer;border:none;
-  padding:11px 20px;border-radius:999px;background:var(--mint-ink);color:#fff;
-  font-size:12px;letter-spacing:.18em;text-transform:uppercase;
-  box-shadow:0 8px 20px -8px rgba(47,143,120,.6);transition:transform .2s ease,opacity .2s ease;}
-.music button:active{transform:scale(.96);}
+.music button{display:flex;align-items:center;gap:10px;cursor:pointer;
+  padding:12px 22px;border-radius:2px;background:transparent;border:1px solid rgba(143,201,188,.55);color:var(--mint-soft);
+  font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  transition:background .2s ease,color .2s ease,border-color .2s ease;}
+.music button:hover{background:var(--mint-ink);border-color:var(--mint-ink);color:#fff;}
+.music button:active{transform:scale(.97);}
 .music .ico{width:14px;height:14px;display:inline-block;}
-.modal-close{position:absolute;top:-38px;right:-2px;z-index:2;width:30px;height:30px;
-  border:none;cursor:pointer;background:transparent;color:rgba(232,228,220,.65);
-  font-size:26px;font-weight:200;line-height:1;padding:0;transition:color .2s ease;}
+/* PC: 프레임 바깥 우측 상단, 배경 없이 × 만 */
+.modal-close{position:absolute;top:-38px;right:-2px;z-index:3;width:34px;height:34px;
+  border:none;cursor:pointer;background:transparent;color:rgba(232,228,220,.7);
+  font-size:26px;font-weight:200;line-height:1;padding:0;
+  display:flex;align-items:center;justify-content:center;transition:color .2s ease;}
 .modal-close:hover{color:#fff;}
+.modal-close:active{transform:scale(.94);}
+/* 모바일: 팝업 하단 중앙에 또렷한 닫기 버튼 (프레임 위쪽이 잘려도 안전) */
+@media (max-width:600px){
+  .modal-close{position:fixed;top:auto;bottom:calc(20px + env(safe-area-inset-bottom));
+    left:50%;right:auto;transform:translateX(-50%);
+    width:auto;height:auto;padding:12px 26px;border-radius:2px;
+    background:rgba(20,23,25,.72);backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.18);color:#fff;font-size:0;letter-spacing:.16em;}
+  .modal-close::after{content:'닫기';font-size:12.5px;font-weight:700;
+    font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;}
+  .modal-close:active{transform:translateX(-50%) scale(.97);}
+}
 .modal-close:active{transform:scale(.94);}
 /* hidden YouTube audio host */
 #ytHost{position:fixed;width:1px;height:1px;left:-9999px;top:-9999px;opacity:0;pointer-events:none;}
@@ -300,7 +323,7 @@ body.cine #shutter::after{animation:none;opacity:0;}
 </div>
 <div class="tapbtn" id="hint" style="display:none"></div>
 <div id="wall"></div>
-<div class="wall-title" id="wallTitle"><div class="big">이번 쿼터 다이어리가 완성되었어요</div><div class="sub">2026 · QUARTER DIARY</div></div>
+<div class="wall-title" id="wallTitle"><div class="big">2분기 쿼터 다이어리</div><div class="sub">2026 · 2Q · QUARTER DIARY</div></div>
 <div class="wall-foot" id="wallFoot">기획자의 독서</div>
 <div id="flash"></div>
 <div id="viewfinder"><span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span><span class="ch"></span></div>
@@ -313,7 +336,7 @@ body.cine #shutter::after{animation:none;opacity:0;}
     <button class="modal-close" id="modalClose" aria-label="닫기">×</button>
     <div class="modal-photo">
       <div class="img"><div class="photo" id="modalPhoto"></div></div>
-      <div class="cap"><div class="q" id="modalQ"></div><div class="d" id="modalD"></div></div>
+      <div class="cap"><div class="q" id="modalQ"></div></div>
     </div>
     <div class="reveal" id="revealBlock">
       <div class="byline" id="modalName"></div>
@@ -396,7 +419,7 @@ function ejectPrint(){
   const print=document.createElement('div');
   print.className='print';
   print.innerHTML='<div class="img"><div class="photo" style="'+photoInline(f)+'"></div></div>'+
-    '<div class="caption"><div class="q">'+(f.title||'한 롤의 기록')+'</div><div class="d">'+(f.date||'')+'</div></div>';
+    '<div class="caption"></div>';
   ejector.appendChild(print);
   // pull the camera back only AFTER the print has fully slid out (eject = 1.25s),
   // so the slot emerge motion isn't stepped on by the camera move
@@ -467,7 +490,6 @@ const modalClose=document.getElementById('modalClose');
 const modalPhoto=document.getElementById('modalPhoto');
 const modalCard=document.querySelector('.modal-card');
 const modalQ=document.getElementById('modalQ');
-const modalD=document.getElementById('modalD');
 const modalName=document.getElementById('modalName');
 const revealBlock=document.getElementById('revealBlock');
 const musicBtn=document.getElementById('musicBtn');
@@ -509,18 +531,32 @@ function setMusicUI(playing){
   musicIco.textContent = playing ? '❚❚' : '▶';
   musicLabel.textContent = playing ? '일시정지' : '음악 재생';
 }
+// fetch the linked YouTube's real title (oEmbed, no API key) and show it by the 🎵
+const ytTitleCache={};
+let ytTitleReq=0;
+function showTrackTitle(link, vid){
+  nowPlaying.textContent='🎵';
+  if(!link) return;
+  const my=++ytTitleReq;
+  if(ytTitleCache[vid]!==undefined){ nowPlaying.textContent='🎵 '+ytTitleCache[vid]; return; }
+  const url='https://www.youtube.com/oembed?format=json&url='+encodeURIComponent('https://www.youtube.com/watch?v='+vid);
+  fetch(url).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+    const t=(d&&d.title)?d.title:'';
+    ytTitleCache[vid]=t;
+    if(my===ytTitleReq && currentVid===vid && t) nowPlaying.textContent='🎵 '+t;
+  }).catch(()=>{ /* 제목 못 가져오면 🎵만 유지 */ });
+}
 function openModal(fi, captureMode, morphFrom){
   const f=FRAMES[fi];
+  const modalCap=modalQ.closest('.cap');
   modalPhoto.style.backgroundImage=photoBG(f);
   modalPhoto.style.backgroundPosition=photoPos(f);
   modalQ.textContent=f.title||'한 롤의 기록';
-  modalD.textContent=f.date||'';
   const qn=(String(f.q).match(/\d+/)||[''])[0];
   const nm=f.name||'';
   // name starts as a blank; tapping the blank fills it in — "____\ub2d8\uc758 N\ubd84\uae30"
   modalName.innerHTML =
-    '<div class="line1"><span class="who-blank" id="whoBlank" title="\ud0ed\ud558\uba74 \uc774\ub984\uc774 \ubcf4\uc5ec\uc694">\u3000\u3000\u3000</span>\ub2d8\uc758 <b>'+(qn?qn+'\ubd84\uae30':f.q)+'</b></div>'+
-    '<span class="tag">\ud558\ub098\uc758 \uc7a5\uba74, \ud558\ub098\uc758 \ub178\ub798</span>';
+    '<div class="line1"><span class="who-blank" id="whoBlank" title="\ud0ed\ud558\uba74 \uc774\ub984\uc774 \ubcf4\uc5ec\uc694">\u3000\u3000\u3000</span>\ub2d8\uc758 <b>'+(qn?qn+'\ubd84\uae30':f.q)+' \ub2e4\uc774\uc5b4\ub9ac</b></div>';
   const whoBlank=document.getElementById('whoBlank');
   if(whoBlank){
     if(!nm){ whoBlank.style.animation='none'; whoBlank.style.borderBottomColor='transparent'; }
@@ -542,10 +578,10 @@ function openModal(fi, captureMode, morphFrom){
   if(currentVid){
     musicBtn.style.display='';
     setMusicUI(false);
-    nowPlaying.textContent='🎵';
+    showTrackTitle(f.yt, currentVid);
   }else{
     musicBtn.style.display='none';
-    nowPlaying.textContent='🎵';
+    nowPlaying.textContent='';
   }
   modal.dataset.capture = captureMode ? '1' : '0';
   modal.dataset.fi = fi;
@@ -556,22 +592,27 @@ function openModal(fi, captureMode, morphFrom){
     // fresh shot: the card grows/moves OUT of the ejected print (morph), and the
     // gray photo develops to color once it has settled large, then name + music.
     revealBlock.classList.remove('show');
+    if(modalCap) modalCap.classList.add('pending');   // hide title until developed
     mp.classList.add('dev');                 // vignette on
-    modalPhoto.style.transition='none';
-    modalPhoto.style.filter=GRAY; modalPhoto.style.opacity='.9';
     modal.classList.add('open');
-    void modalPhoto.offsetWidth;             // commit gray + vignette as frame 0
     // ---- FLIP morph: place the card exactly over the print, then ease to center
     if(morphFrom){
+      modalPhoto.style.transition='none';
+      modalPhoto.style.filter=GRAY; modalPhoto.style.opacity='.9';
       const tr=modalCard.getBoundingClientRect();
       const dx=(morphFrom.left+morphFrom.width/2)-(tr.left+tr.width/2);
       const dy=(morphFrom.top+morphFrom.height/2)-(tr.top+tr.height/2);
       const sc=tr.width>0 ? morphFrom.width/tr.width : 1;
+      modalCard.style.transformOrigin='center center';
       modalCard.style.transition='none';
       modalCard.style.transform='translate('+dx+'px,'+dy+'px) scale('+sc+')';
-      void modalCard.offsetWidth;
+      void modalCard.offsetWidth;            // commit start frame (card + photo together)
       modalCard.style.transition='transform .82s cubic-bezier(.33,0,.15,1)';
       modalCard.style.transform='translate(0px,0px) scale(1)';
+    }else{
+      modalPhoto.style.transition='none';
+      modalPhoto.style.filter=GRAY; modalPhoto.style.opacity='.9';
+      void modalPhoto.offsetWidth;
     }
     const settle = morphFrom ? 660 : 420;
     setTimeout(()=>{
@@ -579,10 +620,12 @@ function openModal(fi, captureMode, morphFrom){
       void modalPhoto.offsetWidth;           // commit the transition prop first
       mp.classList.remove('dev');            // fade the vignette away
       modalPhoto.style.filter=COLOR; modalPhoto.style.opacity='1';
+      if(modalCap) setTimeout(()=>modalCap.classList.remove('pending'), 500);   // title eases in a beat after color starts
     }, settle);
     setTimeout(()=>revealBlock.classList.add('show'), settle+1550);  // name + music, after color is up
   }else{
     // revisiting from the wall: already developed
+    if(modalCap) modalCap.classList.remove('pending');
     mp.classList.remove('dev');
     modalCard.style.transition='';
     modalCard.style.transform='';
@@ -596,7 +639,8 @@ function closeModal(){
   const wasCapture = modal.dataset.capture==='1';
   const fi = parseInt(modal.dataset.fi||'0',10);
   modal.classList.remove('open');
-  if(ytPlayer&&ytReady&&ytPlaying){ try{ytPlayer.pauseVideo();}catch(e){} }
+  // 팝업 닫으면 음악 완전 정지(다음 발표자와 겹치지 않게)
+  if(ytPlayer&&ytReady){ try{ ytPlayer.stopVideo(); }catch(e){} }
   ytPlaying=false; setMusicUI(false);
   if(wasCapture){
     // this was a freshly-shot frame: record it, advance the roll
@@ -659,7 +703,13 @@ function revealWall(){
         pin.style.setProperty('--rot',(rots[k%rots.length])+'deg');
         pin.dataset.fi=fi;
         const label=(f.title||f.name||'').toString();
-        pin.innerHTML='<div class="tape"></div>'+
+        // give each tape a slightly different, asymmetric shape + tilt
+        const tl=6+Math.round(Math.random()*7), tr=3+Math.round(Math.random()*7);   // top corners in
+        const bl=Math.round(Math.random()*6), br=4+Math.round(Math.random()*8);      // bottom corners in
+        const rot=(Math.random()*7-3.5).toFixed(1);
+        const tapeStyle='clip-path:polygon('+tl+'% 0, '+(100-tr)+'% 0, '+(100-br)+'% 100%, '+bl+'% 100%);'+
+          'transform:translateX(-50%) rotate('+rot+'deg);';
+        pin.innerHTML='<div class="tape" style="'+tapeStyle+'"></div>'+
           '<div class="img"><div class="photo" style="'+photoInline(f)+'"></div></div>'+
           '<div class="caption">'+label+'</div>';
         row.appendChild(pin);
