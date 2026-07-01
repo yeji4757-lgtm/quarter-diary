@@ -188,14 +188,14 @@ body.aiming #viewfinder .c{animation:vfPulse 1.1s ease-in-out infinite;}
 #flashBurst.fire{animation:burst .55s ease-out forwards;}
 @keyframes burst{0%{opacity:0;transform:translate(-50%,-50%) scale(0);}
   10%{opacity:1;}55%{opacity:.9;}100%{opacity:0;transform:translate(-50%,-50%) scale(2.6);}}
-#resetBtn{position:fixed;right:22px;left:auto;transform:none;bottom:max(22px,env(safe-area-inset-bottom));
+#resetBtn{position:fixed;left:50%;right:auto;transform:translateX(-50%);bottom:calc(52px + env(safe-area-inset-bottom));
   z-index:58;cursor:pointer;padding:9px 16px;border-radius:999px;
   border:1px solid rgba(200,196,186,.22);background:rgba(255,255,255,.03);
   color:#8a8378;font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;font-size:11px;letter-spacing:.12em;
   opacity:0;pointer-events:none;transition:opacity .5s ease,color .2s ease,border-color .2s ease;}
 #resetBtn.show{opacity:.7;pointer-events:auto;}
 #resetBtn:hover{opacity:1;color:#e8e4dc;border-color:rgba(143,201,188,.5);}
-#resetBtn:active{transform:scale(.96);}
+#resetBtn:active{transform:translateX(-50%) scale(.96);}
 /* shutter target limited to the red shutter button (left edge) */
 #shutter{position:absolute;left:3%;top:62%;width:12%;height:16%;z-index:8;cursor:pointer;background:transparent;border:none;border-radius:6px;}
 #shutter:active{background:rgba(255,255,255,.06);}
@@ -303,8 +303,8 @@ body.cine #shutter::after{animation:none;opacity:0;}
 .who-blank:hover{border-bottom-color:rgba(143,201,188,.9);}
 .who-blank.filled{border-bottom-color:transparent;cursor:default;animation:none;}
 @keyframes whoHint{0%,100%{border-bottom-color:rgba(143,201,188,.3);}50%{border-bottom-color:rgba(143,201,188,.75);}}
-@media (prefers-reduced-motion: reduce){*{animation:none !important;}
-  #world,.rig,.bar,.spot,.freeprint{transition-duration:.2s !important;}}
+/* 참고: 발표 연출(토출·모프·현상)을 기기의 '동작 줄이기'/저전력과 무관하게 항상 보여주려
+   reduce-motion 무력화. 접근성보다 이 웹의 의도된 연출을 우선(1회성 발표용). */
 </style>
 </head>
 <body>
@@ -393,7 +393,7 @@ const frameTotal=document.getElementById('frameTotal');
 frameTotal.textContent=String(FRAMES.length).padStart(2,'0');
 let idx=0, busy=false, rollReady=false;
 let SHOTS=[];   // frame indices already shot, placed on wall after the roll
-const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduce=false; // 동작 줄이기/저전력과 무관하게 발표 연출을 항상 재생
 shutter.addEventListener('click',shoot);
 shutter.disabled=true;   // 롤(사진 데이터) 준비 전 셔터 잠금 — 데모 오촬영 방지
 function shoot(){
