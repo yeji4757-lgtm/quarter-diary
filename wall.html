@@ -65,7 +65,7 @@ body.flashpop .flashglow{opacity:1;transform:scale(1.6);transition:opacity .04s 
   width:var(--slot-w);height:160%;z-index:6;pointer-events:none;overflow:hidden;}
 .print{position:absolute;left:0;top:0;width:100%;
   aspect-ratio:88 / 107;border-radius:1px 1px 4px 4px;
-  padding:5% 5% 21% 5%;transform:translateY(-100%);
+  transform:translateY(-100%);
   /* real Polaroid paper: warm-cool off-white, soft top→bottom shading */
   background:
     linear-gradient(170deg,#fefefe 0%,#fafaf7 55%,#f1f0eb 100%);
@@ -77,7 +77,7 @@ body.flashpop .flashglow{opacity:1;transform:scale(1.6);transition:opacity .04s 
 .print::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
   opacity:.5;mix-blend-mode:multiply;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.04'/%3E%3C/svg%3E");}
-.print .img{position:relative;width:100%;height:100%;border-radius:1px;overflow:hidden;background:#10211f;
+.print .img{position:absolute;top:5%;left:5%;right:5%;bottom:21%;border-radius:1px;overflow:hidden;background:#10211f;
   /* inset bevel: the image sits recessed in the paper window */
   box-shadow:0 0 0 1px rgba(0,0,0,.08),
     0 2px 5px rgba(0,0,0,.28) inset,0 -1px 2px rgba(0,0,0,.12) inset;}
@@ -119,10 +119,10 @@ body.flashpop .flashglow{opacity:1;transform:scale(1.6);transition:opacity .04s 
   opacity:.5;mix-blend-mode:multiply;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.04'/%3E%3C/svg%3E");}
 .pinned.show{opacity:1;transform:translateY(0) scale(1);rotate:var(--rot,0deg);}
-.pinned .img{position:absolute;top:4.1%;left:5%;right:5%;bottom:17.3%;overflow:hidden;border-radius:1px;
+.pinned .img{position:absolute;top:5%;left:5%;right:5%;bottom:21%;overflow:hidden;border-radius:1px;
   box-shadow:0 0 0 1px rgba(0,0,0,.08),0 2px 5px rgba(0,0,0,.28) inset;}
 .pinned .img .photo{position:absolute;inset:0;background-size:cover;background-position:center;}
-.pinned .caption{position:absolute;left:0;right:0;bottom:0;height:17.3%;padding:0 6%;
+.pinned .caption{position:absolute;left:0;right:0;bottom:0;height:21%;padding:0 6%;
   display:flex;align-items:center;justify-content:center;text-align:center;
   font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;font-weight:400;
   font-size:clamp(8px,calc(var(--pw,120px) * .072),12px);letter-spacing:.01em;color:#4a453e;
@@ -159,6 +159,7 @@ body.flashpop .flashglow{opacity:1;transform:scale(1.6);transition:opacity .04s 
 .counter{position:fixed;bottom:max(22px,env(safe-area-inset-bottom));right:20px;z-index:57;
   font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;font-size:11px;letter-spacing:.14em;color:#8a8378;}
 .counter b{color:var(--mint);}
+#wall.on ~ .counter{opacity:0;pointer-events:none;transition:opacity .4s ease;}
 #flash{position:fixed;inset:0;background:radial-gradient(circle at 50% 46%,#ffffff 0%,#ffffff 40%,#fbfdff 100%);
   opacity:0;z-index:50;pointer-events:none;}
 /* viewfinder framing shown while aiming, before the flash fires */
@@ -241,9 +242,9 @@ body.cine #shutter::after{animation:none;opacity:0;}
   transform:scale(.94);transition:transform .5s cubic-bezier(.22,1,.36,1);}
 #modal.open .modal-card{transform:scale(1);}
 .modal-photo{position:relative;width:min(84vw,380px,46vh);aspect-ratio:88/107;border-radius:2px;
-  padding:5% 5% 21% 5%;background:linear-gradient(170deg,#fefefe,#f1f0eb);
+  background:linear-gradient(170deg,#fefefe,#f1f0eb);
   box-shadow:0 30px 60px -16px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.9) inset;}
-.modal-photo .img{position:relative;width:100%;height:100%;border-radius:1px;overflow:hidden;
+.modal-photo .img{position:absolute;top:5%;left:5%;right:5%;bottom:21%;border-radius:1px;overflow:hidden;
   box-shadow:0 0 0 1px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.3) inset;}
 .modal-photo .img .photo{position:absolute;inset:0;background-size:cover;background-position:center;
   filter:grayscale(0) brightness(1) contrast(1) saturate(1) hue-rotate(0deg);
@@ -253,7 +254,7 @@ body.cine #shutter::after{animation:none;opacity:0;}
   background:radial-gradient(circle at 50% 45%, rgba(20,40,38,0) 0%, rgba(16,33,31,.8) 72%);
   opacity:0;transition:opacity 1.7s ease;}
 .modal-photo.dev .img::after{opacity:1;}
-.modal-photo .cap{position:absolute;left:0;right:0;top:82.7%;bottom:0;padding:0 9%;
+.modal-photo .cap{position:absolute;left:0;right:0;top:79%;bottom:0;padding:0 9%;
   display:flex;align-items:center;justify-content:center;
   font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;
   opacity:1;transform:translateY(0);transition:opacity 1.5s ease, transform 1.5s ease;}
@@ -272,25 +273,15 @@ body.cine #shutter::after{animation:none;opacity:0;}
 .music button:active{transform:scale(.97);}
 .music .ico{width:14px;height:14px;display:inline-block;}
 /* PC: 프레임 바깥 우측 상단, 배경 없이 × 만 */
-.modal-close{position:absolute;top:-38px;right:-2px;z-index:3;width:34px;height:34px;
-  border:none;cursor:pointer;background:transparent;color:rgba(232,228,220,.7);
-  font-size:26px;font-weight:200;line-height:1;padding:0;
-  display:flex;align-items:center;justify-content:center;transition:color .2s ease;}
-.modal-close:hover{color:#fff;}
-.modal-close:active{transform:scale(.94);}
-/* 모바일 전용 닫기(×): 카드 밖(#modal 직속)에 두어 화면 오른쪽 위에 고정(카드 transform 회피).
-   눈에 띄지 않도록 배경/테두리 없이 옅은 × 아이콘만. */
-.modal-close-m{display:none;}
-@media (max-width:600px){
-  .modal-close{display:none;}
-  .modal-close-m{display:flex;align-items:center;justify-content:center;
-    position:fixed;z-index:82;top:calc(10px + env(safe-area-inset-top));right:8px;
-    width:44px;height:44px;padding:0;cursor:pointer;background:none;border:none;
-    color:rgba(232,228,220,.34);font-size:26px;font-weight:200;line-height:1;
-    -webkit-tap-highlight-color:transparent;transition:color .2s ease;}
-  .modal-close-m:active{color:rgba(232,228,220,.7);}
-}
-.modal-close:active{transform:scale(.94);}
+/* 닫기(×): 카드 우상단 위 여백에 붙여 항상 어두운 배경 위에 뜨게(프레임에 안 가림).
+   옅은 회색으로 은은하게, 터치 영역 넉넉히. PC·모바일 동일. */
+.modal-close{position:absolute;top:-40px;right:-4px;z-index:3;width:40px;height:40px;
+  border:none;cursor:pointer;background:transparent;color:rgba(232,228,220,.42);
+  font-size:27px;font-weight:200;line-height:1;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;transition:color .2s ease;}
+.modal-close:hover{color:rgba(232,228,220,.85);}
+.modal-close:active{transform:scale(.92);}
 /* hidden YouTube audio host */
 #ytHost{position:fixed;width:1px;height:1px;left:-9999px;top:-9999px;opacity:0;pointer-events:none;}
 .np{margin-top:10px;text-align:center;font-size:10px;letter-spacing:.16em;color:#9a938a;
@@ -343,7 +334,6 @@ body.cine #shutter::after{animation:none;opacity:0;}
 <div class="counter"><b id="frameNo">01</b> / <b id="frameTotal">04</b></div>
 
 <div id="modal">
-  <button class="modal-close-m" id="modalCloseM" type="button" aria-label="닫기">×</button>
   <div class="modal-card">
     <button class="modal-close" id="modalClose" aria-label="닫기">×</button>
     <div class="modal-photo">
@@ -384,7 +374,7 @@ let FRAMES=[
 ];
 
 /* 사진 렌더 헬퍼: 실제 업로드 사진(url) + 멤버가 맞춘 초점(pos) 반영 */
-function photoBG(f){ return f && f.url ? 'url("'+String(f.url).replace(/["\\]/g,'')+'")' : ((f&&f.grad)||'linear-gradient(135deg,#8fc9bc,#bcd6a0)'); }
+function photoBG(f){ return f && f.url ? "url('"+String(f.url).replace(/['"\\]/g,'')+"')" : ((f&&f.grad)||'linear-gradient(135deg,#8fc9bc,#bcd6a0)'); }
 function photoPos(f){ const p=(f&&f.pos)||'center'; return /^[\d.\s%a-z]+$/i.test(p)?p:'center'; }
 function photoInline(f){ return 'background-image:'+photoBG(f)+';background-position:'+photoPos(f); }
 const SPOTS_UNUSED=null; // wall layout is now count-aware (rowLayout/sizePins); fixed spots removed
@@ -601,17 +591,17 @@ function openModal(fi, captureMode, morphFrom){
   const mp=document.querySelector('.modal-photo');
   const GRAY='grayscale(.92) brightness(.3) contrast(.55) saturate(.15) hue-rotate(150deg)';
   const COLOR='grayscale(0) brightness(1) contrast(1) saturate(1) hue-rotate(0deg)';
-  if(captureMode && !reduce){
-    // fresh shot: the card grows/moves OUT of the ejected print (morph), and the
-    // gray photo develops to color once it has settled large, then name + music.
+  if(captureMode){
+    // 새 촬영: 회색→컬러 현상 후 이름/음악 노출.
+    // reduce-motion(동작 줄이기)에서도 '스르륵' 현상은 남긴다(큰 움직임만 생략).
     revealBlock.classList.remove('show');
-    if(modalCap) modalCap.classList.add('pending');   // hide title until developed
-    mp.classList.add('dev');                 // vignette on
+    if(modalCap) modalCap.classList.add('pending');
+    mp.classList.add('dev');
     modal.classList.add('open');
-    // ---- FLIP morph: place the card exactly over the print, then ease to center
-    if(morphFrom){
-      modalPhoto.style.transition='none';
-      modalPhoto.style.filter=GRAY; modalPhoto.style.opacity='.9';
+    modalPhoto.style.transition='none';
+    modalPhoto.style.filter=GRAY; modalPhoto.style.opacity='.9';
+    if(!reduce && morphFrom){
+      // ---- FLIP morph: 토출 필름에서 중앙으로 확대(움직임) — reduce 아닐 때만
       const tr=modalCard.getBoundingClientRect();
       const dx=(morphFrom.left+morphFrom.width/2)-(tr.left+tr.width/2);
       const dy=(morphFrom.top+morphFrom.height/2)-(tr.top+tr.height/2);
@@ -619,23 +609,24 @@ function openModal(fi, captureMode, morphFrom){
       modalCard.style.transformOrigin='center center';
       modalCard.style.transition='none';
       modalCard.style.transform='translate('+dx+'px,'+dy+'px) scale('+sc+')';
-      void modalCard.offsetWidth;            // commit start frame (card + photo together)
+      void modalCard.offsetWidth;
       modalCard.style.transition='transform .82s cubic-bezier(.33,0,.15,1)';
       modalCard.style.transform='translate(0px,0px) scale(1)';
     }else{
-      modalPhoto.style.transition='none';
-      modalPhoto.style.filter=GRAY; modalPhoto.style.opacity='.9';
+      modalCard.style.transition=''; modalCard.style.transform='';   // CSS 스케일-인(.5s)에 맡김
       void modalPhoto.offsetWidth;
     }
-    const settle = morphFrom ? 660 : 420;
+    const settle    = reduce ? 40  : (morphFrom ? 660 : 420);
+    const devDur    = reduce ? 0.9 : 1.6;
+    const revealGap = reduce ? 700 : 1550;
     setTimeout(()=>{
-      modalPhoto.style.transition='filter 1.6s ease, opacity 1.6s ease';
-      void modalPhoto.offsetWidth;           // commit the transition prop first
-      mp.classList.remove('dev');            // fade the vignette away
+      modalPhoto.style.transition='filter '+devDur+'s ease, opacity '+devDur+'s ease';
+      void modalPhoto.offsetWidth;
+      mp.classList.remove('dev');
       modalPhoto.style.filter=COLOR; modalPhoto.style.opacity='1';
-      if(modalCap) setTimeout(()=>modalCap.classList.remove('pending'), 500);   // title eases in a beat after color starts
+      if(modalCap) setTimeout(()=>modalCap.classList.remove('pending'), reduce?250:500);
     }, settle);
-    setTimeout(()=>revealBlock.classList.add('show'), settle+1550);  // name + music, after color is up
+    setTimeout(()=>revealBlock.classList.add('show'), settle+revealGap);
   }else{
     // revisiting from the wall: already developed
     if(modalCap) modalCap.classList.remove('pending');
@@ -766,7 +757,6 @@ musicBtn.addEventListener('click',()=>{
   }catch(e){ nowPlaying.textContent='재생할 수 없습니다'; }
 });
 modalClose.addEventListener('click',closeModal);
-{ const mc=document.getElementById('modalCloseM'); if(mc) mc.addEventListener('click',closeModal); }
 modal.addEventListener('click',(e)=>{ if(e.target===modal) closeModal(); });
 document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModal(); });
 
