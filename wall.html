@@ -131,9 +131,19 @@ body.flashpop .flashglow{opacity:1;transform:scale(1.6);transition:opacity .04s 
    edges are slightly slanted & asymmetric via clip-path */
 .pinned .tape{position:absolute;top:-3.5%;left:50%;transform:translateX(-50%);
   width:44%;height:9%;
-  background:linear-gradient(90deg,rgba(143,201,188,.9),rgba(159,209,197,.95),rgba(143,201,188,.88));
-  clip-path:polygon(6% 0, 100% 0, 94% 100%, 0 100%);
-  box-shadow:0 2px 5px rgba(0,0,0,.18);}
+  background:
+    linear-gradient(180deg,rgba(70,128,113,.22) 0%,rgba(70,128,113,0) 18%,rgba(70,128,113,0) 82%,rgba(70,128,113,.24) 100%),
+    linear-gradient(92deg,rgba(158,202,189,.80),rgba(171,209,197,.76) 48%,rgba(158,202,189,.80));
+  mix-blend-mode:multiply;opacity:.92;
+  box-shadow:0 1px 2px rgba(0,0,0,.20), inset 0 0 0 1px rgba(255,255,255,.05);}
+.pinned .tape::before{content:"";position:absolute;inset:0;clip-path:inherit;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='40'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='120' height='40' filter='url(%23p)'/%3E%3C/svg%3E");
+  background-size:56px 18px;mix-blend-mode:multiply;opacity:.38;}
+.pinned .tape::after{content:"";position:absolute;inset:0;clip-path:inherit;pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(47,143,120,.12) 0%,rgba(47,143,120,0) 12%,rgba(47,143,120,0) 88%,rgba(47,143,120,.12) 100%),
+    linear-gradient(105deg,rgba(255,255,255,.05) 0%,rgba(255,255,255,0) 40%);
+  mix-blend-mode:multiply;opacity:.85;}
 
 .eyebrow{position:fixed;top:max(20px,env(safe-area-inset-top));left:0;right:0;z-index:57;
   text-align:center;font-size:11px;font-weight:800;letter-spacing:.42em;text-transform:uppercase;color:#a49c90;transition:opacity .6s ease;}
@@ -374,8 +384,8 @@ let FRAMES=[
 ];
 
 /* 사진 렌더 헬퍼: 실제 업로드 사진(url) + 멤버가 맞춘 초점(pos) 반영 */
-function photoBG(f){ return f && f.url ? 'url('+f.url+')' : ((f&&f.grad)||'linear-gradient(135deg,#8fc9bc,#bcd6a0)'); }
-function photoPos(f){ return (f&&f.pos) || 'center'; }
+function photoBG(f){ return f && f.url ? 'url("'+String(f.url).replace(/["\\]/g,'')+'")' : ((f&&f.grad)||'linear-gradient(135deg,#8fc9bc,#bcd6a0)'); }
+function photoPos(f){ const p=(f&&f.pos)||'center'; return /^[\d.\s%a-z]+$/i.test(p)?p:'center'; }
 function photoInline(f){ return 'background-image:'+photoBG(f)+';background-position:'+photoPos(f); }
 const SPOTS_UNUSED=null; // wall layout is now count-aware (rowLayout/sizePins); fixed spots removed
 const world=document.getElementById('world');
@@ -391,12 +401,13 @@ const frameNo=document.getElementById('frameNo');
 const frameTotal=document.getElementById('frameTotal');
 // cut count is automatic: the roll length = number of people in FRAMES
 frameTotal.textContent=String(FRAMES.length).padStart(2,'0');
-let idx=0, busy=false;
+let idx=0, busy=false, rollReady=false;
 let SHOTS=[];   // frame indices already shot, placed on wall after the roll
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 shutter.addEventListener('click',shoot);
+shutter.disabled=true;   // 롤(사진 데이터) 준비 전 셔터 잠금 — 데모 오촬영 방지
 function shoot(){
-  if(busy||idx>=FRAMES.length) return;
+  if(!rollReady||busy||idx>=FRAMES.length) return;
   busy=true; hint.classList.add('fade-out');
   brandFoot.classList.add('fade-out');
   document.body.classList.add('cine','shooting','aiming');
@@ -700,20 +711,21 @@ function revealWall(){
       row.className='wall-row';
       for(let c=0;c<count;c++,k++){
         const fi=SHOTS[k]; const f=FRAMES[fi];
+        if(!f) continue;   // 데이터 로딩 레이스 방어(#wall 바로가기 등 SHOTS>FRAMES일 때 크래시 방지)
         const pin=document.createElement('div');
         pin.className='pinned';
         pin.style.setProperty('--rot',(rots[k%rots.length])+'deg');
         pin.dataset.fi=fi;
         const label=(f.title||f.name||'').toString();
-        // give each tape a slightly different, asymmetric shape + tilt
-        const tl=6+Math.round(Math.random()*7), tr=3+Math.round(Math.random()*7);   // top corners in
-        const bl=Math.round(Math.random()*6), br=4+Math.round(Math.random()*8);      // bottom corners in
-        const rot=(Math.random()*7-3.5).toFixed(1);
-        const tapeStyle='clip-path:polygon('+tl+'% 0, '+(100-tr)+'% 0, '+(100-br)+'% 100%, '+bl+'% 100%);'+
-          'transform:translateX(-50%) rotate('+rot+'deg);';
+        // 테이프: 핀마다 미세하게 다른 모양(위아래 평행 · 좌우 비대칭 · 회전 없음)
+        const j=()=>Math.round(Math.random()*4);
+        const tl=3+j(), bl=3+j();
+        const tr=3+j(), br=3+j();
+        const tapeStyle='clip-path:polygon('+tl+'% 0, '+(100-tr)+'% 0, '+(100-br)+'% 100%, '+bl+'% 100%);';
         pin.innerHTML='<div class="tape" style="'+tapeStyle+'"></div>'+
           '<div class="img"><div class="photo" style="'+photoInline(f)+'"></div></div>'+
-          '<div class="caption">'+label+'</div>';
+          '<div class="caption"></div>';
+        pin.querySelector('.caption').textContent=label;   // XSS 방지: 캡션은 textContent
         row.appendChild(pin);
         pins.push(pin);
       }
@@ -791,8 +803,8 @@ function mapRow(r){
     url:r.url||'', pos:r.pos||'center', yt:r.music||'' };
 }
 async function loadRoll(){
-  if(!SHARED) return; // 키 없으면 데모 유지
   try{
+    if(!SHARED) return; // 키 없으면 데모 유지
     await ensureSupabase();
     let { data, error } = await sb.from(TABLE).select('*').limit(200);
     if(error) throw error;
@@ -806,9 +818,11 @@ async function loadRoll(){
     });
     // 같은 이름은 최신 1건만 (재제출 시 벽에 중복으로 걸리는 것 방지).
     // 위 정렬이 오름차순이라 각 이름의 '마지막' 항목이 가장 최신이다.
+    // 이름이 빈 행은 서로 다른 사람일 수 있어 합치지 않음(고유 키 부여).
     const lastByName=new Map();
-    data.forEach((r,i)=>lastByName.set((r.name||'').trim(),i));
-    data=data.filter((r,i)=>i===lastByName.get((r.name||'').trim()));
+    const keyOf=(r,i)=>{ const n=(r.name||'').trim(); return n||('__blank'+i); };
+    data.forEach((r,i)=>lastByName.set(keyOf(r,i),i));
+    data=data.filter((r,i)=>i===lastByName.get(keyOf(r,i)));
     if(PRESENT_REVERSE) data.reverse();
     if(data.length){
       FRAMES = data.map(mapRow);
@@ -818,6 +832,7 @@ async function loadRoll(){
       FRAMES.slice(0,3).forEach(f=>{ if(f.url){ const im=new Image(); im.src=f.url; } });
     }
   }catch(e){ console.warn('롤 불러오기 실패 — 데모로 진행:', e); }
+  finally{ rollReady=true; shutter.disabled=false; }   // 로드(성공/실패/키없음) 후 셔터 해제
 }
 loadRoll();
 </script>
