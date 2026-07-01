@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>기획자의 독서 — 2분기 한 컷 올리기</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquareNeo@1.0/nanumsquareneo.css" rel="stylesheet">
+<style>
+:root{
+  --mint:#8fc9bc; --mint-ink:#2f8f78; --mint-soft:#bfe0d7;
+  --void:#0c0e10; --panel:#15181b; --line:#2a2e31;
+  --ink:#ece8e0; --ink-soft:#9a938a; --ink-faint:#6b6258;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;}
+body{font-family:'NanumSquareNeo','Helvetica Neue',-apple-system,'Apple SD Gothic Neo',sans-serif;
+  background:radial-gradient(120% 78% at 50% 0%, #15181b 0%, #0c0e10 60%);
+  color:var(--ink);min-height:100dvh;
+  padding:max(30px,env(safe-area-inset-top)) 22px calc(38px + env(safe-area-inset-bottom));
+  display:flex;justify-content:center;}
+.wrap{width:100%;max-width:440px;display:flex;flex-direction:column;}
+
+.eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.4em;text-transform:uppercase;color:#a49c90;}
+.eyebrow b{color:var(--mint);font-weight:800;}
+
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;}
+.quarter{font-size:10px;font-weight:800;letter-spacing:.16em;color:var(--mint);
+  border:1px solid rgba(143,201,188,.35);border-radius:2px;padding:5px 10px;}
+
+h1{font-weight:800;font-size:clamp(23px,6.6vw,27px);letter-spacing:.005em;color:#f4f1ea;line-height:1.36;margin-bottom:38px;}
+h1 em{display:block;font-style:normal;font-size:12px;font-weight:800;letter-spacing:.14em;
+  color:var(--mint);margin-bottom:12px;}
+h1 span{color:var(--mint);}
+
+/* slim attach row */
+.attach{display:flex;align-items:center;gap:16px;cursor:pointer;padding:16px 0;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:6px;transition:border-color .2s;}
+.attach:hover{border-color:rgba(143,201,188,.4);}
+.attach.drag{border-color:var(--mint);}
+.thumb{position:relative;width:54px;height:66px;flex:none;border-radius:2px;overflow:hidden;
+  background:linear-gradient(168deg,#fbfaf6,#eae7df);padding:5px 5px 15px;
+  box-shadow:0 6px 14px -6px rgba(0,0,0,.6);}
+.thumb .ph{width:100%;height:100%;border-radius:1px;background:#1a1d1f;background-size:cover;background-position:center;
+  display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:200;color:rgba(255,255,255,.5);}
+.attach .txt .l{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:.01em;}
+.attach .txt .s{font-size:11.5px;color:var(--ink-faint);margin-top:3px;letter-spacing:.03em;}
+.attach.has .txt .l{color:var(--mint);}
+
+/* underline fields */
+.fields{display:flex;flex-direction:column;margin-top:14px;}
+.field{padding:16px 0 13px;border-bottom:1px solid var(--line);transition:border-color .2s;}
+.field.focus{border-color:var(--mint);}
+.field label{display:block;font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:10px;}
+.field .count{float:right;font-size:10px;color:var(--ink-faint);font-weight:400;letter-spacing:.04em;}
+.field input{width:100%;border:none;background:transparent;color:var(--ink);
+  font-size:16px;font-family:inherit;font-weight:400;padding:0;letter-spacing:.01em;}
+.field input::placeholder{color:#4f4a41;}
+.field input:focus{outline:none;}
+
+.submit{margin-top:34px;width:100%;padding:16px;cursor:pointer;border-radius:2px;
+  border:1px solid var(--mint-ink);background:transparent;color:var(--mint-soft);
+  font-size:12.5px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;
+  transition:background .25s ease,color .25s ease,opacity .2s ease;}
+.submit:hover:not(:disabled){background:var(--mint-ink);color:#fff;}
+.submit:active:not(:disabled){transform:scale(.99);}
+.submit:disabled{opacity:.35;cursor:not-allowed;}
+
+.msg{margin-top:15px;text-align:center;font-size:12px;letter-spacing:.02em;min-height:17px;line-height:1.5;}
+.msg.ok{color:var(--mint);} .msg.err{color:#e69a8a;}
+
+.mode{margin-top:22px;display:flex;align-items:center;gap:8px;padding:10px 13px;border-radius:9px;
+  font-size:11px;line-height:1.5;letter-spacing:.02em;}
+.mode.local{background:rgba(227,201,138,.07);border:1px solid rgba(227,201,138,.22);color:#d8c79a;}
+.mode.shared{background:rgba(47,143,120,.13);border:1px solid rgba(47,143,120,.38);color:var(--mint-soft);}
+.mode .dot{width:7px;height:7px;border-radius:50%;flex:none;}
+.mode.local .dot{background:#e3c98a;} .mode.shared .dot{background:var(--mint);}
+
+.foot{margin-top:44px;text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.42em;
+  text-transform:uppercase;color:#5f594f;}
+
+input[type=file]{display:none;}
+
+/* 첨부 후 위치 조정(폴라로이드 프레임에 맞춰 초점 이동) */
+.crop{display:none;flex-direction:column;align-items:center;gap:11px;margin-top:18px;}
+.crop.on{display:flex;animation:doneIn .4s ease;}
+.crop-frame{position:relative;width:210px;aspect-ratio:88/107;border-radius:3px 3px 6px 6px;
+  background:linear-gradient(168deg,#fdfcf8,#f1efe8 60%,#eae7df);
+  box-shadow:0 20px 40px -18px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.9) inset;}
+/* image window matches the wall's polaroid window EXACTLY (same insets → same 0.942 ratio),
+   so whatever focal point the member sets shows identically on the retro wall */
+.crop-img{position:absolute;top:4.1%;left:5%;right:5%;bottom:17.3%;border-radius:1px;background:#1a1d1f;
+  background-size:cover;background-position:50% 50%;
+  cursor:grab;touch-action:none;box-shadow:0 0 0 1px rgba(0,0,0,.1) inset;}
+.crop-img.dragging{cursor:grabbing;}
+.crop-hint{font-size:11px;color:var(--ink-faint);letter-spacing:.03em;}
+
+/* ===== 제출 완료 화면 ===== */
+.done{width:100%;max-width:440px;display:none;flex-direction:column;
+  animation:doneIn .6s cubic-bezier(.22,1,.36,1);}
+.done.on{display:flex;}
+@keyframes doneIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+.done .mark{width:60px;height:60px;border-radius:50%;margin:6px auto 0;
+  border:1.5px solid var(--mint);display:flex;align-items:center;justify-content:center;
+  color:var(--mint);font-size:26px;font-weight:200;
+  animation:markPop .5s cubic-bezier(.2,1.3,.5,1) .15s both;}
+@keyframes markPop{from{opacity:0;transform:scale(.5);}to{opacity:1;transform:scale(1);}}
+.done .eyebrow{text-align:center;margin-top:26px;}
+.done h2{text-align:center;margin-top:14px;font-weight:800;font-size:23px;color:#f4f1ea;letter-spacing:.01em;line-height:1.4;}
+.done .p{text-align:center;margin-top:11px;font-size:13px;font-weight:400;line-height:1.75;color:var(--ink-soft);}
+
+.sched{margin-top:34px;border:1px solid rgba(143,201,188,.28);border-radius:4px;
+  background:rgba(47,143,120,.08);padding:32px 22px;}
+.sched .lab{font-size:9.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--mint);}
+.sched .cue{margin-top:12px;font-size:14px;font-weight:700;color:#f0ede6;line-height:1.5;letter-spacing:.005em;}
+.sched .when{margin-top:20px;padding-top:20px;border-top:1px solid rgba(143,201,188,.18);
+  display:flex;flex-direction:column;gap:9px;}
+.sched .when .d{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:.02em;}
+.sched .when .t{font-size:12px;font-weight:400;color:var(--ink-soft);letter-spacing:.04em;}
+.done .again{margin-top:24px;text-align:center;}
+.done .again button{background:none;border:none;cursor:pointer;color:var(--ink-faint);
+  font-family:inherit;font-size:12px;letter-spacing:.06em;text-decoration:underline;text-underline-offset:3px;}
+.done .again button:hover{color:var(--ink-soft);}
+.done .foot{margin-top:auto;padding-top:44px;}
+.sched .btns{margin-top:24px;display:flex;flex-direction:column;gap:10px;}
+.sched a{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:3px;
+  font-size:12.5px;font-weight:800;letter-spacing:.14em;text-decoration:none;transition:background .2s,color .2s,border-color .2s;}
+.sched a.zoom{background:var(--mint-ink);color:#fff;box-shadow:0 12px 26px -12px rgba(47,143,120,.7);}
+.sched a.zoom:active{transform:scale(.99);}
+.sched a.cal{border:1px solid var(--line);color:var(--ink-soft);}
+.sched a.cal:hover{border-color:rgba(143,201,188,.5);color:var(--ink);}
+.sched .meta{margin-top:14px;font-size:11px;line-height:1.6;color:var(--ink-faint);letter-spacing:.03em;text-align:center;}
+.sched .meta b{color:var(--ink-soft);font-weight:700;}
+</style>
+</head>
+<body>
+<form class="wrap" id="form" novalidate>
+  <div class="top">
+    <div class="eyebrow">Quarter Diary</div>
+    <div class="quarter">Q2</div>
+  </div>
+  <h1><em>2026년 2분기</em>하나의 사진, 하나의 음악을<br>골라주세요.</h1>
+
+  <div class="attach" id="drop" role="button" tabindex="0" aria-label="사진 업로드">
+    <div class="thumb"><div class="ph" id="preview">+</div></div>
+    <div class="txt">
+      <div class="l" id="cap">클릭해서 사진을 추가해주세요.</div>
+      <div class="s">사진 1장</div>
+    </div>
+  </div>
+  <input type="file" id="file" accept="image/*">
+
+  <div class="crop" id="crop">
+    <div class="crop-frame"><div class="crop-img" id="cropImg"></div></div>
+    <div class="crop-hint">드래그해서 보일 위치를 맞춰주세요</div>
+  </div>
+
+  <div class="fields">
+    <div class="field">
+      <label>이름</label>
+      <input type="text" id="inName" placeholder="닉네임을 써도 괜찮아요." maxlength="20" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>사진 제목 <span class="count" id="count">0 / 30</span></label>
+      <input type="text" id="inTitle" placeholder="제목은 너무 길지 않게 작성해주세요." maxlength="30" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>음악 링크</label>
+      <input type="url" id="inMusic" placeholder="유튜브 링크를 찾아 넣어주세요." autocomplete="off" inputmode="url">
+    </div>
+  </div>
+
+  <button type="submit" class="submit" id="submit" disabled>다 골랐어요!</button>
+  <div class="msg" id="msg"></div>
+
+  <div class="mode local" id="mode">
+    <span class="dot"></span>
+    <span id="modeText">로컬 미리보기 — 지금은 이 브라우저에서만 처리됩니다.</span>
+  </div>
+
+  <div class="foot">기획자의 독서</div>
+</form>
+
+<section class="done" id="done" aria-live="polite">
+  <div class="mark">✓</div>
+  <div class="eyebrow">Quarter Diary · <b>Q2</b></div>
+  <h2>쿼터 다이어리가 제출되었어요.</h2>
+  <p class="p">계속해서 쿼터 다이어리를 쌓아나가면<br>2026년 연말에 회고하기 좋겠죠?</p>
+
+  <div class="sched">
+    <div class="lab">일정 안내</div>
+    <div class="cue">2분기 쿼터 다이어리 일정을 저장해두세요.</div>
+    <div class="when">
+      <span class="d" id="schedDate">날짜 미정</span>
+      <span class="t" id="schedTime"></span>
+    </div>
+    <div class="btns">
+      <a class="zoom" id="calLink" href="#" target="_blank" rel="noopener">구글 캘린더에 저장 →</a>
+      <a class="cal" id="zoomLink" href="#" target="_blank" rel="noopener">줌 회의 바로 참가</a>
+    </div>
+    <div class="meta" id="schedMeta"></div>
+  </div>
+
+  <div class="again"><button type="button" id="againBtn">다시 올리기</button></div>
+  <div class="foot">기획자의 독서</div>
+</section>
+
+<script>
+/* =========================================================================
+   공유 저장소 설정 (Supabase)
+   -------------------------------------------------------------------------
+   1) supabase.com 무료 프로젝트 생성
+   2) Storage 에 'photos' 버킷 만들기 (Public)
+   3) Table 'wall' 생성 (SQL Editor에 아래 붙여넣기):
+      create table wall (
+        id bigint generated always as identity primary key,
+        created_at timestamptz default now(),
+        name text, title text, music text, url text, pos text,
+        hidden boolean default false,   -- 어드민: 발표에서 숨기기
+        order_index int                 -- 어드민: 수동 발표 순서(옵션)
+      );
+      alter table wall enable row level security;
+      create policy "read"   on wall for select using (true);
+      create policy "insert" on wall for insert with check (true);
+      -- Storage: 'photos' 버킷 Public + 업로드 허용 정책
+   4) 아래 두 값을 Project Settings > API 에서 복사해 넣기.
+      비어 있으면 자동으로 '로컬 미리보기'(이 브라우저에서만)로 동작합니다.
+   ========================================================================= */
+const SUPABASE_URL = "https://bziqpggivloolhtjkbih.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Mb6cJdVNvQLiFwIVqMWD6Q_EGHmQ4pR";
+const BUCKET = "photos";
+const TABLE  = "wall";
+const SHARED = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+let sb=null;
+
+/* ===== 다음 모임(제출 완료 화면에 노출) ===== */
+const SESSION = {
+  zoom:      "https://us06web.zoom.us/j/81777036708?pwd=LGTEF8BPgZqaWwY3fb8MUXmJYp7Sb2.1",
+  meetingId: "817 7703 6708",
+  passcode:  "707030",
+  date:  "2026-07-05", start: "20:00", end: "22:00", tz: "Asia/Seoul",
+  dateLabel: "2026. 7. 5 (일)",
+  timeLabel: "오후 8:00 · 온라인(Zoom)"
+};
+
+const drop=document.getElementById('drop');
+const file=document.getElementById('file');
+const preview=document.getElementById('preview');
+const cap=document.getElementById('cap');
+const inName=document.getElementById('inName');
+const inTitle=document.getElementById('inTitle');
+const inMusic=document.getElementById('inMusic');
+const submit=document.getElementById('submit');
+const msg=document.getElementById('msg');
+const countEl=document.getElementById('count');
+const crop=document.getElementById('crop');
+const cropImg=document.getElementById('cropImg');
+let picked=null, pickedUrl=null, posX=50, posY=50;
+function clampPos(v){ return Math.max(0,Math.min(100,v)); }
+function applyPos(){ const p=posX.toFixed(1)+'% '+posY.toFixed(1)+'%';
+  cropImg.style.backgroundPosition=p; preview.style.backgroundPosition=p; }
+
+if(SHARED){
+  const m=document.getElementById('mode');
+  m.className='mode shared';
+  document.getElementById('modeText').textContent='공유 모드 — 올린 사진이 모두의 회고 벽에 함께 걸립니다.';
+}
+
+function initSupabase(){
+  return new Promise(res=>{
+    if(!SHARED) return res(false);
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    s.onload=()=>{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY); res(true); };
+    s.onerror=()=>res(false);
+    document.head.appendChild(s);
+  });
+}
+function showMsg(t,k){ msg.textContent=t; msg.className='msg '+(k||''); }
+function validate(){ submit.disabled=!(picked && inName.value.trim() && inTitle.value.trim() && inMusic.value.trim()); }
+
+function handleFile(f){
+  const okType = f.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(f.name||'');
+  if(!okType){ showMsg('이미지 파일만 올릴 수 있습니다.','err'); return; }
+  if(f.size>30*1024*1024){ showMsg('사진이 너무 커요(30MB 이하로 올려주세요).','err'); return; }
+  showMsg('사진 준비 중…','ok'); cap.textContent='사진 준비 중…'; submit.disabled=true;
+  processImage(f).then(({blob,url})=>{
+    picked=blob; pickedUrl=url;
+    preview.style.backgroundImage='url('+url+')'; preview.textContent='';
+    cropImg.style.backgroundImage='url('+url+')';
+    posX=50; posY=50; applyPos();
+    crop.classList.add('on');
+    drop.classList.add('has'); cap.textContent='사진 첨부됨';
+    showMsg('',''); validate();
+  }).catch(err=>{
+    console.error(err);
+    showMsg('이 사진을 열지 못했어요. 다른 사진으로 시도해 주세요.','err');
+    cap.textContent='클릭해서 사진을 추가해주세요.';
+  });
+}
+
+/* ---- 이미지 처리: HEIC 변환 · EXIF 회전 보정 · 리사이즈 · JPEG 압축 ---- */
+const MAX_EDGE = 1600, JPEG_Q = 0.85;
+function ensureHeic(){
+  if(window.heic2any) return Promise.resolve();
+  if(window.__heicP) return window.__heicP;
+  window.__heicP=new Promise((res,rej)=>{ const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+    s.onload=res; s.onerror=()=>rej(new Error('heic loader fail')); document.head.appendChild(s); });
+  return window.__heicP;
+}
+function imgFromBlob(blob){
+  return new Promise((res,rej)=>{ const img=new Image();
+    img.onload=()=>res(img); img.onerror=()=>rej(new Error('decode fail'));
+    img.src=URL.createObjectURL(blob); });
+}
+async function loadBitmap(file){
+  // 1) 네이티브 디코드(대부분 포맷 + 애플 기기의 HEIC) — EXIF 회전까지 보정
+  if('createImageBitmap' in window){
+    try{ return await createImageBitmap(file,{imageOrientation:'from-image'}); }catch(e){}
+  }
+  // 2) HEIC/HEIF: 브라우저가 못 열면 heic2any로 JPEG 변환
+  if(/heic|heif/i.test(file.type)||/\.(heic|heif)$/i.test(file.name||'')){
+    try{
+      await ensureHeic();
+      const out=await window.heic2any({blob:file,toType:'image/jpeg',quality:0.92});
+      const jb=Array.isArray(out)?out[0]:out;
+      if('createImageBitmap' in window){ try{ return await createImageBitmap(jb,{imageOrientation:'from-image'}); }catch(e){} }
+      return await imgFromBlob(jb);
+    }catch(e){}
+  }
+  // 3) 최후: <img> (최신 브라우저는 기본적으로 EXIF 방향을 보정)
+  return await imgFromBlob(file);
+}
+async function processImage(file){
+  const src=await loadBitmap(file);
+  const iw=src.width||src.naturalWidth, ih=src.height||src.naturalHeight;
+  if(!iw||!ih) throw new Error('no dimensions');
+  const scale=Math.min(1, MAX_EDGE/Math.max(iw,ih));
+  const cw=Math.max(1,Math.round(iw*scale)), ch=Math.max(1,Math.round(ih*scale));
+  const canvas=document.createElement('canvas'); canvas.width=cw; canvas.height=ch;
+  const ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(src,0,0,cw,ch);
+  if(src.close) src.close();
+  const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',JPEG_Q));
+  if(!blob) throw new Error('encode fail');
+  const url=canvas.toDataURL('image/jpeg',JPEG_Q);
+  return {blob,url};
+}
+
+drop.addEventListener('click',()=>file.click());
+drop.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); file.click(); } });
+file.addEventListener('change',e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag');}));
+drop.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')) handleFile(f); });
+
+/* drag the attached photo to set its focal point (stored as background-position) */
+let dragging=false, sx=0, sy=0, spx=50, spy=50;
+cropImg.addEventListener('pointerdown',e=>{ dragging=true; cropImg.classList.add('dragging');
+  cropImg.setPointerCapture(e.pointerId); sx=e.clientX; sy=e.clientY; spx=posX; spy=posY; });
+cropImg.addEventListener('pointermove',e=>{ if(!dragging) return;
+  const r=cropImg.getBoundingClientRect();
+  posX=clampPos(spx-(e.clientX-sx)/r.width*100);
+  posY=clampPos(spy-(e.clientY-sy)/r.height*100);
+  applyPos(); });
+function endDrag(){ dragging=false; cropImg.classList.remove('dragging'); }
+cropImg.addEventListener('pointerup',endDrag);
+cropImg.addEventListener('pointercancel',endDrag);
+
+[inName,inTitle,inMusic].forEach(el=>el.addEventListener('input',validate));
+inTitle.addEventListener('input',()=>{ countEl.textContent=inTitle.value.length+' / 30'; });
+document.querySelectorAll('.field input').forEach(inp=>{
+  const wrap=inp.closest('.field');
+  inp.addEventListener('focus',()=>wrap.classList.add('focus'));
+  inp.addEventListener('blur',()=>wrap.classList.remove('focus'));
+});
+
+document.getElementById('form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(submit.disabled) return;
+  submit.disabled=true; showMsg('확인 중…','ok');
+  const entry={ name:inName.value.trim(), title:inTitle.value.trim(), music:inMusic.value.trim(), pos:posX.toFixed(1)+'% '+posY.toFixed(1)+'%' };
+  try{
+    if(SHARED){
+      if(!sb) await initSupabase();
+      const path=Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.jpg';
+      const up=await sb.storage.from(BUCKET).upload(path,picked,{cacheControl:'3600',upsert:false,contentType:'image/jpeg'});
+      if(up.error) throw up.error;
+      entry.url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      const ins=await sb.from(TABLE).insert({name:entry.name,title:entry.title,music:entry.music,url:entry.url,pos:entry.pos});
+      if(ins.error) throw ins.error;
+      // 같은 이름의 이전 제출은 정리 — 최신 한 장만 남긴다
+      try{
+        const {data:olds}=await sb.from(TABLE).select('url').eq('name',entry.name).neq('url',entry.url);
+        await sb.from(TABLE).delete().eq('name',entry.name).neq('url',entry.url);
+        if(olds&&olds.length){
+          const paths=olds.map(r=>{ const p=(r.url||'').split('/'+BUCKET+'/')[1]; return p?decodeURIComponent(p):null; }).filter(Boolean);
+          if(paths.length) await sb.storage.from(BUCKET).remove(paths);
+        }
+      }catch(cleanupErr){ console.warn('이전 제출 정리 실패(무시 가능):',cleanupErr); }
+    }else{
+      await new Promise(r=>setTimeout(r,650)); // local preview: fake the save
+    }
+    showMsg('','');
+    showDone();
+  }catch(err){ console.error(err); showMsg('올리지 못했습니다: '+(err.message||err),'err'); submit.disabled=false; }
+});
+
+/* ---- 완료 화면 ---- */
+const formEl=document.getElementById('form');
+const doneEl=document.getElementById('done');
+function pad(n){return String(n).padStart(2,'0');}
+function setupSchedule(){
+  document.getElementById('schedDate').textContent=SESSION.dateLabel||'날짜 미정';
+  document.getElementById('schedTime').textContent=SESSION.timeLabel||'';
+  const zl=document.getElementById('zoomLink');
+  if(SESSION.zoom){ zl.href=SESSION.zoom; } else { zl.style.display='none'; }
+  // 구글 캘린더 저장 링크 (줌 링크·회의 ID·암호를 일정 안에 담아 전달)
+  const cal=document.getElementById('calLink');
+  if(SESSION.date && SESSION.start && SESSION.end){
+    const d=SESSION.date.replace(/-/g,'');
+    const s=d+'T'+SESSION.start.replace(':','')+'00';
+    const e=d+'T'+SESSION.end.replace(':','')+'00';
+    const details=['기획자의 독서 · 2분기 쿼터다이어리 회고 모임','',
+      SESSION.zoom?('Zoom 참가: '+SESSION.zoom):'',
+      SESSION.meetingId?('회의 ID: '+SESSION.meetingId):'',
+      SESSION.passcode?('암호: '+SESSION.passcode):''].filter(Boolean).join('\n');
+    const params=new URLSearchParams({action:'TEMPLATE',
+      text:'[기획자의 독서] 2분기 쿼터다이어리',
+      details:details, location:SESSION.zoom||'Zoom',
+      dates:s+'/'+e, ctz:SESSION.tz||'Asia/Seoul'});
+    cal.href='https://calendar.google.com/calendar/render?'+params.toString();
+  } else { cal.style.display='none'; }
+  // 회의 ID / 암호 안내
+  const meta=document.getElementById('schedMeta');
+  if(meta){
+    meta.innerHTML=(SESSION.meetingId?('회의 ID <b>'+SESSION.meetingId+'</b>'):'')+
+      (SESSION.passcode?('  ·  암호 <b>'+SESSION.passcode+'</b>'):'');
+  }
+}
+function showDone(){
+  setupSchedule();
+  formEl.style.display='none';
+  doneEl.classList.add('on');
+  window.scrollTo(0,0);
+}
+function resetToForm(){
+  doneEl.classList.remove('on');
+  formEl.style.display='';
+  picked=null; pickedUrl=null;
+  preview.style.backgroundImage=''; preview.textContent='+'; drop.classList.remove('has'); cap.textContent='클릭해서 사진을 추가해주세요.';
+  crop.classList.remove('on'); cropImg.style.backgroundImage=''; posX=50; posY=50;
+  inName.value=''; inTitle.value=''; inMusic.value=''; file.value=''; countEl.textContent='0 / 30';
+  submit.disabled=false; validate(); showMsg('','');
+}
+document.getElementById('againBtn').addEventListener('click',()=>{
+  alert('여러 번 제출하시면, 가장 최신에 제출된 쿼터 다이어리가 저장됩니다.');
+  resetToForm();
+});
+
+if(SHARED) initSupabase();
+</script>
+</body>
+</html>
