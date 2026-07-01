@@ -801,6 +801,11 @@ async function loadRoll(){
       const at=new Date(a.created_at||0).getTime(), bt=new Date(b.created_at||0).getTime();
       return at-bt;
     });
+    // 같은 이름은 최신 1건만 (재제출 시 벽에 중복으로 걸리는 것 방지).
+    // 위 정렬이 오름차순이라 각 이름의 '마지막' 항목이 가장 최신이다.
+    const lastByName=new Map();
+    data.forEach((r,i)=>lastByName.set((r.name||'').trim(),i));
+    data=data.filter((r,i)=>i===lastByName.get((r.name||'').trim()));
     if(PRESENT_REVERSE) data.reverse();
     if(data.length){
       FRAMES = data.map(mapRow);
