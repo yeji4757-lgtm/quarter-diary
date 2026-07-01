@@ -268,16 +268,17 @@ body.cine #shutter::after{animation:none;opacity:0;}
   display:flex;align-items:center;justify-content:center;transition:color .2s ease;}
 .modal-close:hover{color:#fff;}
 .modal-close:active{transform:scale(.94);}
-/* 모바일: 팝업 하단 중앙에 또렷한 닫기 버튼 (프레임 위쪽이 잘려도 안전) */
+/* 모바일 전용 닫기(×): 카드 밖(#modal 직속)에 두어 화면 오른쪽 위에 고정(카드 transform 회피).
+   눈에 띄지 않도록 배경/테두리 없이 옅은 × 아이콘만. */
+.modal-close-m{display:none;}
 @media (max-width:600px){
-  .modal-close{position:fixed;top:auto;bottom:calc(20px + env(safe-area-inset-bottom));
-    left:50%;right:auto;transform:translateX(-50%);
-    width:auto;height:auto;padding:12px 26px;border-radius:2px;
-    background:rgba(20,23,25,.72);backdrop-filter:blur(6px);
-    border:1px solid rgba(255,255,255,.18);color:#fff;font-size:0;letter-spacing:.16em;}
-  .modal-close::after{content:'닫기';font-size:12.5px;font-weight:700;
-    font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;}
-  .modal-close:active{transform:translateX(-50%) scale(.97);}
+  .modal-close{display:none;}
+  .modal-close-m{display:flex;align-items:center;justify-content:center;
+    position:fixed;z-index:82;top:calc(10px + env(safe-area-inset-top));right:8px;
+    width:44px;height:44px;padding:0;cursor:pointer;background:none;border:none;
+    color:rgba(232,228,220,.34);font-size:26px;font-weight:200;line-height:1;
+    -webkit-tap-highlight-color:transparent;transition:color .2s ease;}
+  .modal-close-m:active{color:rgba(232,228,220,.7);}
 }
 .modal-close:active{transform:scale(.94);}
 /* hidden YouTube audio host */
@@ -332,6 +333,7 @@ body.cine #shutter::after{animation:none;opacity:0;}
 <div class="counter"><b id="frameNo">01</b> / <b id="frameTotal">04</b></div>
 
 <div id="modal">
+  <button class="modal-close-m" id="modalCloseM" type="button" aria-label="닫기">×</button>
   <div class="modal-card">
     <button class="modal-close" id="modalClose" aria-label="닫기">×</button>
     <div class="modal-photo">
@@ -752,6 +754,7 @@ musicBtn.addEventListener('click',()=>{
   }catch(e){ nowPlaying.textContent='재생할 수 없습니다'; }
 });
 modalClose.addEventListener('click',closeModal);
+{ const mc=document.getElementById('modalCloseM'); if(mc) mc.addEventListener('click',closeModal); }
 modal.addEventListener('click',(e)=>{ if(e.target===modal) closeModal(); });
 document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModal(); });
 
