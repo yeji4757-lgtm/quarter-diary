@@ -223,7 +223,8 @@ body.cine #shutter::after{animation:none;opacity:0;}
   opacity:0;pointer-events:none;transition:opacity 1s ease .4s;}
 .wall-title.show{opacity:1;}
 .wall-title .big{font-size:clamp(20px,6vw,34px);letter-spacing:.08em;color:#f2efe8;font-weight:300;}
-.wall-title .sub{margin-top:18px;font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:var(--mint);}
+.wall-title .sub{margin-top:18px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--mint);}
+@media (min-width:700px){.wall-title{top:7%;}}
 .wall-foot{position:fixed;left:0;right:0;bottom:max(20px,env(safe-area-inset-bottom));z-index:8;
   text-align:center;font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:#7d766b;
   opacity:0;pointer-events:none;transition:opacity 1s ease .6s;}
@@ -325,7 +326,7 @@ body.cine #shutter::after{animation:none;opacity:0;}
 </div>
 <div class="tapbtn" id="hint" style="display:none"></div>
 <div id="wall"></div>
-<div class="wall-title" id="wallTitle"><div class="big">2분기 쿼터 다이어리</div><div class="sub">2026 · 2Q · QUARTER DIARY</div></div>
+<div class="wall-title" id="wallTitle"><div class="big">2026 · 2Q · QUARTER DIARY</div><div class="sub">한 장의 장면. 한 곡의 음악. 한 줄 문장으로 기억하기</div></div>
 <div class="wall-foot" id="wallFoot">기획자의 독서</div>
 <div id="flash"></div>
 <div id="viewfinder"><span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span><span class="ch"></span></div>
