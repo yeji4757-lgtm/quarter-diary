@@ -126,7 +126,7 @@ body.flashpop .flashglow{opacity:1;transform:scale(1.6);transition:opacity .04s 
   display:flex;align-items:center;justify-content:center;text-align:center;
   font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;font-weight:400;
   font-size:clamp(8px,calc(var(--pw,120px) * .072),12px);letter-spacing:.01em;color:#4a453e;
-  background:linear-gradient(180deg,#fafaf7,#f1f0eb);line-height:1.15;}
+  background:linear-gradient(180deg,#fafaf7,#f1f0eb);line-height:1.15;overflow:hidden;word-break:keep-all;}
 /* washi tape: top & bottom edges stay parallel(horizontal); left & right
    edges are slightly slanted & asymmetric via clip-path */
 .pinned .tape{position:absolute;top:-3.5%;left:50%;transform:translateX(-50%);
@@ -679,6 +679,17 @@ function sizePins(rowCounts){
   w=Math.max(72,Math.min(w,168));                     // sane bounds
   return Math.round(w);
 }
+/* 긴 제목이 프레임 밖으로 넘치면(모바일) 캡션 칸을 필요한 만큼만 넓히고, 그래도 넘치면 살짝만 축소. PC는 그대로. */
+function fitCaption(pin){
+  const cap=pin.querySelector('.caption'), img=pin.querySelector('.img');
+  if(!cap||!img) return;
+  cap.style.height=''; img.style.bottom=''; cap.style.fontSize='';   // 리셋(리사이즈 대비)
+  if(innerWidth>=700) return;                                        // PC는 지금 그대로
+  let band=21;
+  while(cap.scrollHeight>cap.clientHeight+0.5 && band<42){ band+=3; cap.style.height=band+'%'; img.style.bottom=band+'%'; }
+  let fs=parseFloat(getComputedStyle(cap).fontSize), g=0;
+  while(cap.scrollHeight>cap.clientHeight+0.5 && fs>7 && g++<12){ fs-=0.5; cap.style.fontSize=fs+'px'; }
+}
 /* place all shot photos on the wall in a count-aware grid, then reveal */
 function revealWall(){
   hint.classList.add('fade-out');
@@ -723,6 +734,7 @@ function revealWall(){
       }
       wall.appendChild(row);
     });
+    pins.forEach(fitCaption);
     pins.forEach((pin,i)=>{
       const delay=reduce?0:(i*150);
       setTimeout(()=>{
@@ -744,6 +756,7 @@ addEventListener('resize',()=>{
   if(!wall.classList.contains('on')) return;
   const counts=[...wall.querySelectorAll('.wall-row')].map(r=>r.children.length);
   if(counts.length) wall.style.setProperty('--pw', sizePins(counts)+'px');
+  wall.querySelectorAll('.pinned').forEach(fitCaption);
 });
 musicBtn.addEventListener('click',()=>{
   if(!currentVid) return;
