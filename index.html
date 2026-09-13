@@ -175,6 +175,7 @@ input[type=file]{display:none;}
     <div class="field">
       <label>이름</label>
       <select id="inName" required><option value="" disabled selected>이름을 골라주세요</option></select>
+      <input type="text" id="inNewName" placeholder="이름을 적어주세요. 닉네임도 괜찮아요." maxlength="20" autocomplete="off" hidden style="margin-top:12px">
     </div>
     <div class="field">
       <label>사진 제목 <span class="count" id="count">0 / 30</span></label>
@@ -249,7 +250,10 @@ function applyPos(){ const p=posX.toFixed(1)+'% '+posY.toFixed(1)+'%';
   cropImg.style.backgroundPosition=p; preview.style.backgroundPosition=p; }
 
 function showMsg(t,k){ msg.textContent=t; msg.className='msg '+(k||''); }
-function validate(){ submit.disabled=!(picked && inName.value.trim() && inTitle.value.trim() && inMusic.value.trim()); }
+function validate(){
+  const nameOk = inName.value==='__new' ? !!document.getElementById('inNewName').value.trim() : !!inName.value;
+  submit.disabled=!(picked && nameOk && inTitle.value.trim() && inMusic.value.trim());
+}
 
 function handleFile(f){
   const okType = f.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(f.name||'');
@@ -356,10 +360,10 @@ document.getElementById('form').addEventListener('submit',async e=>{
   if(MUSIC.state==='blocked' && !confirm('이 곡은 발표 화면에서 재생되지 않아요.\n그래도 이 링크로 올릴까요?')){
     submit.disabled=false; showMsg('',''); inMusic.focus(); return;
   }
-  const member = MEMBERS.find(m=>m.id===inName.value);
-  if(!member){ showMsg('이름을 골라주세요.','err'); submit.disabled=false; return; }
   try{
     const sb = await QD.sb();
+    const member = await resolveMember(sb);
+    if(!member){ showMsg('이름을 골라주세요.','err'); submit.disabled=false; return; }
     const path=Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.jpg';
     const up=await sb.storage.from(BUCKET).upload(path,picked,{cacheControl:'3600',upsert:false,contentType:'image/jpeg'});
     if(up.error) throw up.error;
@@ -412,6 +416,7 @@ function resetToForm(){
   preview.style.backgroundImage=''; preview.textContent='+'; drop.classList.remove('has'); cap.textContent='클릭해서 사진을 추가해주세요.';
   crop.classList.remove('on'); cropImg.style.backgroundImage=''; posX=50; posY=50;
   inName.value=''; inTitle.value=''; inMusic.value=''; file.value=''; countEl.textContent='0 / 30';
+  const nn=document.getElementById('inNewName'); nn.value=''; nn.hidden=true;
   MUSIC={vid:null,state:null}; setMusicNote('','');
   submit.disabled=false; validate(); showMsg('','');
 }
@@ -419,6 +424,33 @@ document.getElementById('againBtn').addEventListener('click',()=>{
   alert('여러 번 제출하시면, 가장 최신에 제출된 쿼터 다이어리가 저장됩니다.');
   resetToForm();
 });
+
+/* ---- 처음 참여하는 분 ----
+   참여자는 분기마다 바뀐다. 목록에 이름이 없으면 직접 적고, 올릴 때 멤버 명단에 추가한다.
+   (같은 이름이 이미 있으면 그 사람으로 본다 — 숨김 처리된 옛 멤버가 돌아온 경우 포함) */
+const inNewName=document.getElementById('inNewName');
+inName.addEventListener('change',()=>{
+  const isNew = inName.value==='__new';
+  inNewName.hidden = !isNew;
+  if(isNew) inNewName.focus();
+  validate();
+});
+inNewName.addEventListener('input',validate);
+
+async function resolveMember(sb){
+  if(inName.value!=='__new') return MEMBERS.find(m=>m.id===inName.value)||null;
+  const name=inNewName.value.trim();
+  if(!name) return null;
+  const same=MEMBERS.find(m=>m.name===name);
+  if(same) return same;
+  const ins=await sb.from('members').insert({name, sort:999}).select('id,name').single();
+  if(!ins.error){ MEMBERS.push(ins.data); return ins.data; }
+  if(ins.error.code==='23505'){          // 이미 있는 이름(숨김 멤버)
+    const {data}=await sb.from('members').select('id,name').eq('name',name).maybeSingle();
+    if(data) return data;
+  }
+  throw ins.error;
+}
 
 /* ---- 음악 링크 확인 ----
    유튜브는 성인 인증·퍼가기 금지 영상을 다른 사이트 플레이어에서 재생하지 않는다.
@@ -492,6 +524,9 @@ async function start(){
       o.value=m.id; o.textContent=m.name;
       inName.appendChild(o);
     });
+    const newOpt=document.createElement('option');
+    newOpt.value='__new'; newOpt.textContent='+ 목록에 이름이 없어요 (처음 참여)';
+    inName.appendChild(newOpt);
   }catch(e){ console.error(e); lockForm('멤버 명단을 불러오지 못했어요.'); return; }
 
   // 제출 마감된 분기면 폼을 잠근다

@@ -85,6 +85,24 @@ section .sub{font-size:12.5px;color:var(--ink-faint);line-height:1.7;margin-bott
 .tag.off{color:var(--ink-faint);border:1px solid var(--line);}
 .tag.hid{color:var(--warn);border:1px solid rgba(217,138,138,.4);}
 .tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+/* 두 칸 스위치 — 지금 상태가 칸으로 보이니 따로 상태 표시를 달지 않는다 */
+.ctl{display:inline-flex;align-items:center;gap:7px;}
+.ctl > span{font-size:11.5px;color:var(--ink-faint);}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;}
+.seg button{font-family:inherit;font-size:11.5px;font-weight:700;color:var(--ink-faint);
+  background:transparent;border:none;padding:6px 11px;cursor:pointer;transition:all .16s;}
+.seg button + button{border-left:1px solid var(--line);}
+.seg button:not(.on):hover{color:var(--ink);background:rgba(255,255,255,.03);}
+.seg button.on{color:var(--void);background:var(--mint);cursor:default;}
+.item{transition:box-shadow .15s,border-color .15s;}
+.item.dragging{position:relative;z-index:5;transition:none;border-color:rgba(143,201,188,.6);
+  box-shadow:0 14px 34px rgba(0,0,0,.5);background:#1a1e21;}
+.grip{cursor:grab;color:var(--ink-faint);font-size:15px;line-height:1;padding:8px 6px;margin:-8px -2px -8px -6px;
+  touch-action:none;user-select:none;-webkit-user-select:none;flex:none;}
+.grip:hover{color:var(--mint);}
+body.dragging-any, body.dragging-any *{cursor:grabbing !important;user-select:none;}
+.no{font-size:11.5px;color:var(--ink-faint);width:18px;text-align:right;flex:none;}
+.seg button.on.neutral{color:var(--ink);background:#2a2e31;}   /* 닫힘·비공개는 민트로 칠하지 않는다 */
 .editBox{margin-top:14px;border-top:1px solid var(--line);}
 .editBox[hidden]{display:none;}
 
@@ -172,8 +190,7 @@ select.pick{font-family:inherit;font-size:13px;font-weight:700;color:var(--ink);
     <div class="eyebrow">Quarter&nbsp;Diary</div>
     <nav>
       <button data-go="secQuarters" class="on">분기</button>
-      <button data-go="secStatus">제출 현황</button>
-      <button data-go="secOrder">발표 순서</button>
+      <button data-go="secOrder">제출·순서</button>
       <button data-go="secMembers">멤버</button>
     </nav>
     <div class="who">
@@ -186,13 +203,13 @@ select.pick{font-family:inherit;font-size:13px;font-weight:700;color:var(--ink);
     <!-- 분기 -->
     <section id="secQuarters">
       <h2>분기</h2>
-      <div class="sub">‘지금 분기’로 지정된 곳으로 업로드가 들어갑니다. 제출을 그만 받으려면 ‘업로드 닫기’.<br>발표 화면과 보관함은 ‘발표 공개’를 눌러야 멤버들에게 보여요. 공개 전에는 사진도 볼 수 없어요.</div>
+      <div class="sub">업로드는 ‘지금 분기’로 들어갑니다. 발표가 ‘비공개’면 멤버는 사진을 볼 수 없어요.</div>
       <div id="qList"></div>
 
-      <button type="button" class="foldBtn" id="nfOpen" style="margin-top:14px">+ 새 분기 만들기</button>
+      <button type="button" class="foldBtn" id="nfOpen" style="margin-top:14px">+ 새 분기</button>
       <div class="form fold" id="nfForm" hidden style="margin-top:14px">
         <div class="formTitle">새 분기 만들기</div>
-        <div class="formSub">만들면 바로 ‘지금 분기’가 되고 업로드가 열립니다. 발표는 비공개로 시작해요.<br>모임 날짜·줌 정보는 나중에 ‘정보 수정’에서 채워도 돼요.</div>
+        <div class="formSub">만들면 바로 ‘지금 분기’가 되고 업로드가 열립니다. 발표는 비공개로 시작해요.<br>모임 날짜·줌 정보는 나중에 ‘수정’에서 채워도 돼요.</div>
         <div class="grid2">
           <div class="f"><label>연도</label><input type="number" id="nfYear" min="2020" max="2100" inputmode="numeric"></div>
           <div class="f"><label>분기 <span class="hint">1~4</span></label><input type="number" id="nfQ" min="1" max="4" inputmode="numeric"></div>
@@ -205,32 +222,24 @@ select.pick{font-family:inherit;font-size:13px;font-weight:700;color:var(--ink);
           <div class="f"><label>암호 <span class="hint">선택</span></label><input type="text" id="nfZpw"></div>
         </div>
         <div class="row" style="margin-top:20px">
-          <button type="button" class="btn" id="nfSave" style="margin:0">만들고 열기</button>
+          <button type="button" class="btn" id="nfSave" style="margin:0">만들기</button>
           <button type="button" class="mini link" id="nfCancel">취소</button>
         </div>
         <div class="msg" id="nfMsg"></div>
       </div>
     </section>
 
-    <!-- 제출 현황 -->
-    <section id="secStatus">
-      <h2>제출 현황</h2>
-      <div class="sub">누가 아직 안 올렸는지 한눈에 봅니다. 여기서 고른 분기가 아래 ‘발표 순서’에도 같이 적용돼요.</div>
-      <select class="pick" id="statusPick"></select>
-      <div class="card" id="statusList"></div>
-    </section>
-
-    <!-- 발표 순서 -->
+    <!-- 제출·순서 : 분기마다 올라온 사진 목록 = 발표 순서 -->
     <section id="secOrder">
-      <h2>발표 순서</h2>
-      <div class="sub">여기 보이는 위에서 아래 순서가 곧 발표 순서입니다.<br>바꾼 뒤 ‘순서 저장’을 눌러야 반영돼요.</div>
-      <select class="pick" id="orderPick"></select>
-      <div id="orderList"></div>
-      <div class="row" style="margin-top:14px">
-        <button type="button" class="btn ghost" id="orderSave" style="width:auto;margin:0;padding:12px 22px">순서 저장</button>
-        <button type="button" class="mini" id="dedupe">중복 제출 정리</button>
-        <span class="msg" id="orderMsg" style="margin:0"></span>
+      <h2>제출·순서</h2>
+      <div class="sub">분기마다 올라온 사진이에요. 위에서부터 발표합니다. 왼쪽 ⋮⋮ 을 끌어서 옮기면 바로 저장돼요.</div>
+      <div class="row" style="gap:10px;margin-bottom:14px">
+        <select class="pick" id="orderPick" style="margin:0" aria-label="분기 고르기"></select>
+        <span class="sm" id="orderCount" style="margin:0"></span>
+        <button type="button" class="mini" id="dedupe" style="margin-left:auto">중복 정리</button>
       </div>
+      <div id="orderList"></div>
+      <div class="msg" id="orderMsg"></div>
     </section>
 
     <!-- 멤버 -->
@@ -320,53 +329,59 @@ function sortedQuarters(){
 const attr=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 const hm=t=>(t||'').slice(0,5);
 
+// 두 칸 스위치: [켜짐 | 꺼짐]. 지금 상태 칸은 눌러도 아무 일 없다
+function seg(label, onText, offText, isOn, onPick){
+  const wrap=document.createElement('span'); wrap.className='ctl';
+  const l=document.createElement('span'); l.textContent=label;
+  const g=document.createElement('span'); g.className='seg'; g.setAttribute('role','group'); g.setAttribute('aria-label',label);
+  [[onText,true],[offText,false]].forEach(([t,v])=>{
+    const b=document.createElement('button'); b.type='button'; b.textContent=t;
+    const cur=(v===isOn);
+    if(cur){ b.className='on'+(v?'':' neutral'); b.setAttribute('aria-pressed','true'); }
+    else{ b.setAttribute('aria-pressed','false'); b.onclick=()=>onPick(v); }
+    g.appendChild(b);
+  });
+  wrap.append(l,g); return wrap;
+}
+
 function renderQuarters(){
   const box=$('qList'); box.innerHTML='';
-  if(!QUARTERS.length){ box.innerHTML='<div class="card muted">아직 분기가 없어요. 아래에서 만들어주세요.</div>'; return; }
+  if(!QUARTERS.length){ box.innerHTML='<div class="card muted">아직 분기가 없어요.</div>'; return; }
   sortedQuarters().forEach(q=>{
     const n=shotsOf(q.year,q.quarter).length;
     const d=document.createElement('div'); d.className='card';
     if(isTest(q)) d.style.opacity='.6';
-    const meta=[QD.dateLabel(q)||'모임 날짜 미정'];
+    const meta=[QD.dateLabel(q)||'날짜 미정'];
     if(QD.timeLabel(q)) meta.push(QD.timeLabel(q));
     meta.push('사진 '+n+'장');
     d.innerHTML='<div class="row">'+
       '<div class="grow"><div class="nm">'+q.label+(isTest(q)?' <span class="sm" style="font-weight:400">· 시험용</span>':'')+'</div>'+
       '<div class="sm">'+meta.join(' · ')+'</div></div>'+
-      '<div class="tags">'+
-        (q.is_current?'<span class="tag now">지금 분기</span>':'')+
-        '<span class="tag '+(q.upload_open?'open':'off')+'">'+(q.upload_open?'업로드 열림':'업로드 닫힘')+'</span>'+
-        '<span class="tag '+(q.wall_open?'open':'off')+'">'+(q.wall_open?'발표 공개':'발표 비공개')+'</span>'+
-      '</div></div>';
+      (q.is_current?'<span class="tag now">지금 분기</span>':'')+
+      '</div>';
 
-    const acts=document.createElement('div'); acts.className='row'; acts.style.cssText='margin-top:12px;gap:8px';
+    const acts=document.createElement('div'); acts.className='row'; acts.style.cssText='margin-top:12px;gap:14px';
+    acts.appendChild(seg('업로드','열림','닫힘',q.upload_open, v=>patchQuarter(q,{upload_open:v})));
+    acts.appendChild(seg('발표','공개','비공개',q.wall_open, async v=>{
+      if(v && !confirm(q.label+' 발표를 공개할까요?')) return;
+      if(await patchQuarter(q,{wall_open:v})) flash(v?'공개했어요':'비공개로 바꿨어요');
+    }));
+
+    const tools=document.createElement('span'); tools.className='row'; tools.style.cssText='gap:6px;margin-left:auto';
     if(!q.is_current && !isTest(q)){
-      const b=document.createElement('button'); b.className='mini acc'; b.textContent='지금 분기로 지정';
-      b.onclick=()=>{ if(confirm(q.label+'를 지금 분기로 바꿀까요?\n업로드 화면이 이 분기로 바뀝니다.')) setCurrent(q); };
-      acts.appendChild(b);
+      const b=document.createElement('button'); b.className='mini acc'; b.textContent='지금 분기로';
+      b.onclick=()=>{ if(confirm(q.label+'를 지금 분기로 바꿀까요?')) setCurrent(q); };
+      tools.appendChild(b);
     }
-    const t=document.createElement('button'); t.className='mini';
-    t.textContent=q.upload_open?'업로드 닫기':'업로드 열기';
-    t.onclick=()=>patchQuarter(q,{upload_open:!q.upload_open}); acts.appendChild(t);
-
-    const w=document.createElement('button'); w.className='mini';
-    w.textContent=q.wall_open?'발표 비공개로':'발표 공개하기';
-    w.onclick=async()=>{
-      if(!q.wall_open && !confirm(q.label+' 발표를 공개할까요?\n공개하면 발표 화면과 보관함에서 누구나 사진을 볼 수 있어요.')) return;
-      if(q.wall_open && !confirm(q.label+' 발표를 다시 비공개로 돌릴까요?\n멤버들이 발표 화면·보관함에서 이 분기를 볼 수 없게 됩니다.')) return;
-      if(await patchQuarter(q,{wall_open:!q.wall_open})) flash(q.label+' 발표를 '+(q.wall_open?'비공개로 돌렸어요.':'공개했어요.'));
-    };
-    acts.appendChild(w);
-
-    const e=document.createElement('button'); e.className='mini'; e.textContent='정보 수정';
-    acts.appendChild(e);
-
+    const e=document.createElement('button'); e.className='mini'; e.textContent='수정';
+    tools.appendChild(e);
     const v=document.createElement('a'); v.className='mini link'; v.style.textDecoration='none';
     v.href='wall.html?y='+q.year+'&q='+q.quarter; v.target='_blank'; v.rel='noopener';
-    v.textContent=q.wall_open?'발표 화면 보기 ↗':'발표 미리보기 ↗'; acts.appendChild(v);
+    v.textContent='보기 ↗'; tools.appendChild(v);
+    acts.appendChild(tools);
     d.appendChild(acts);
 
-    // 모임 날짜·시간·줌 정보 고치기 (분기를 만든 뒤에 날짜가 정해지는 경우가 많다)
+    // 모임 날짜·시간·줌 정보 고치기
     const edit=document.createElement('div'); edit.className='editBox'; edit.hidden=true;
     edit.innerHTML='<div class="grid2">'+
       '<div class="f"><label>모임 날짜</label><input type="date" data-k="meeting_date" value="'+attr(q.meeting_date)+'"></div>'+
@@ -382,16 +397,16 @@ function renderQuarters(){
         '<button type="button" class="mini link" data-act="cancel">취소</button></div>'+
       '<div class="msg"></div>';
     const emsg=edit.querySelector('.msg');
-    e.onclick=()=>{ edit.hidden=!edit.hidden; e.textContent=edit.hidden?'정보 수정':'수정 닫기';
+    e.onclick=()=>{ edit.hidden=!edit.hidden; e.textContent=edit.hidden?'수정':'닫기';
       if(!edit.hidden) edit.querySelector('[data-k=meeting_date]').focus(); };
-    edit.querySelector('[data-act=cancel]').onclick=()=>{ edit.hidden=true; e.textContent='정보 수정'; };
+    edit.querySelector('[data-act=cancel]').onclick=()=>{ edit.hidden=true; e.textContent='수정'; };
     edit.querySelector('[data-act=save]').onclick=async()=>{
       const val=k=>edit.querySelector('[data-k='+k+']').value.trim();
-      if(!!val('start_time')!==!!val('end_time')){ say(emsg,'시작과 끝 시간을 둘 다 적어주세요.','err'); return; }
+      if(!!val('start_time')!==!!val('end_time')){ say(emsg,'시작·끝 시간을 둘 다 적어주세요.','err'); return; }
       const patch={meeting_date:val('meeting_date')||null, start_time:val('start_time')||null, end_time:val('end_time')||null,
         zoom_url:val('zoom_url')||null, zoom_id:val('zoom_id')||null, zoom_pw:val('zoom_pw')||null};
       say(emsg,'저장 중…','');
-      if(await patchQuarter(q,patch)) flash(q.label+' 정보를 저장했어요.');
+      if(await patchQuarter(q,patch)) flash('저장했어요');
       else say(emsg,'저장하지 못했어요.','err');
     };
     d.appendChild(edit);
@@ -459,28 +474,20 @@ $('nfSave').addEventListener('click',async()=>{
   }catch(e){ say($('nfMsg'),'만들지 못했어요: '+(e.message||e),'err'); }
 });
 
-/* ---------- 분기 고르는 드롭다운 (제출 현황 / 발표 순서) ---------- */
+/* ---------- 분기 고르기 ---------- */
 function fillPicks(){
-  const ids=['statusPick','orderPick'];
+  const el=$('orderPick'); const keep=el.value;
   const cur=QUARTERS.find(q=>q.is_current)||sortedQuarters()[0];
-  const keep=$('statusPick').value;
-  ids.forEach(id=>{
-    const el=$(id); el.innerHTML='';
-    sortedQuarters().forEach(q=>{
-      const o=document.createElement('option');
-      o.value=q.year+'|'+q.quarter;
-      o.textContent=q.label+(q.is_current?' · 지금':'')+(isTest(q)?' · 시험용':'');
-      el.appendChild(o);
-    });
+  el.innerHTML='';
+  sortedQuarters().forEach(q=>{
+    const o=document.createElement('option');
+    o.value=q.year+'|'+q.quarter;
+    o.textContent=q.label+(q.is_current?' · 지금':'')+(isTest(q)?' · 시험용':'');
+    el.appendChild(o);
   });
-  const val = keep && [...$('statusPick').options].some(o=>o.value===keep) ? keep
-            : (cur ? cur.year+'|'+cur.quarter : '');
-  // 제출 현황과 발표 순서는 늘 같은 분기를 본다 — 한쪽을 바꾸면 다른 쪽도 따라 바뀐다
-  ids.forEach(id=>{
-    $(id).value=val;
-    $(id).onchange=e=>{ ids.forEach(o=>$(o).value=e.target.value); renderStatus(); renderOrder(); };
-  });
-  renderStatus(); renderOrder();
+  el.value = keep && [...el.options].some(o=>o.value===keep) ? keep : (cur ? cur.year+'|'+cur.quarter : '');
+  el.onchange=renderOrder;
+  renderOrder();
 }
 function picked(id){
   const v=$(id).value; if(!v) return null;
@@ -488,34 +495,7 @@ function picked(id){
   return QUARTERS.find(x=>x.year===y&&x.quarter===q)||null;
 }
 
-/* ---------- 제출 현황 ---------- */
-function renderStatus(){
-  const q=picked('statusPick'); const box=$('statusList'); box.innerHTML='';
-  if(!q){ box.innerHTML='<div class="muted">분기를 골라주세요.</div>'; return; }
-  const shots=shotsOf(q.year,q.quarter);
-  const done=new Set(shots.map(s=>s.member_id).filter(Boolean));
-  const active=MEMBERS.filter(m=>m.active);
-  const yes=active.filter(m=>done.has(m.id)).length;
-  const head=document.createElement('div'); head.className='sm'; head.style.marginBottom='8px';
-  head.textContent=active.length+'명 중 '+yes+'명 제출 · '+(active.length-yes)+'명 대기';
-  box.appendChild(head);
-  active.forEach(m=>{
-    const ok=done.has(m.id);
-    const d=document.createElement('div'); d.className='chk';
-    d.innerHTML='<span class="dot '+(ok?'y':'n')+'"></span><span class="grow">'+m.name+'</span>'+
-      '<span class="st '+(ok?'y':'')+'">'+(ok?'제출함':'아직')+'</span>';
-    box.appendChild(d);
-  });
-  // 명단에 없는 이름으로 올라온 옛 기록
-  const strays=shots.filter(s=>!s.member_id);
-  if(strays.length){
-    const d=document.createElement('div'); d.className='sm'; d.style.marginTop='12px';
-    d.textContent='명단에 연결되지 않은 제출 '+strays.length+'건: '+strays.map(s=>s.name||'(이름없음)').join(', ');
-    box.appendChild(d);
-  }
-}
-
-/* ---------- 발표 순서 ---------- */
+/* ---------- 제출·순서 ---------- */
 function renderOrder(){
   const q=picked('orderPick'); const box=$('orderList'); box.innerHTML='';
   say($('orderMsg'),'','');
@@ -527,6 +507,8 @@ function renderOrder(){
     if(ao==null&&bo!=null) return 1;
     return new Date(a.created_at||0)-new Date(b.created_at||0);
   });
+  const hiddenN=ORDER.filter(r=>r.hidden).length;
+  $('orderCount').textContent = ORDER.length ? ORDER.length+'장'+(hiddenN?' · 숨김 '+hiddenN:'') : '';
   if(!ORDER.length){ box.innerHTML='<div class="card muted">아직 올라온 사진이 없어요.</div>'; return; }
   drawOrder();
   queueMusic(ORDER);
@@ -583,45 +565,112 @@ async function changeMusic(r){
   }catch(e){ alert('바꾸지 못했어요: '+(e.message||e)); }
 }
 
+// 올린 시각 (한국 시간) — 9. 14. 21:03
+function whenKST(ts){
+  if(!ts) return '';
+  return new Date(ts).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+}
+
 function drawOrder(){
   const box=$('orderList'); box.innerHTML='';
   ORDER.forEach((r,i)=>{
-    const d=document.createElement('div'); d.className='card';
+    const d=document.createElement('div'); d.className='card item'; d.dataset.id=r.id;
     const who=memberName(r.member_id)||r.name||'(이름없음)';
-    d.innerHTML='<div class="row">'+
-      '<span class="sm" style="margin:0;width:18px">'+(i+1)+'</span>'+
-      '<span class="thumb" style="background-image:'+(r.url?"url('"+String(r.url).replace(/['"\\]/g,'')+"')":'none')+'"></span>'+
-      '<div class="grow"><div class="nm">'+who+'</div><div class="sm">'+(r.title||'제목 없음')+'</div></div>'+
+    const img=r.url?"url('"+String(r.url).replace(/['"\\]/g,'')+"')":'none';
+    d.innerHTML='<div class="row" style="gap:10px">'+
+      '<span class="grip" role="button" tabindex="0" aria-label="'+attr(who)+' 순서 옮기기" title="끌어서 옮기기">⋮⋮</span>'+
+      '<span class="no">'+(i+1)+'</span>'+
+      '<span class="thumb" style="background-image:'+img+'"></span>'+
+      '<div class="grow"><div class="nm">'+who+'</div>'+
+        '<div class="sm">'+(r.title||'제목 없음')+(r.created_at?' · '+whenKST(r.created_at):'')+'</div></div>'+
       '<div class="tags">'+
         '<span data-mus="'+r.id+'">'+musicBadge(r)+'</span>'+
         (r.hidden?'<span class="tag hid">숨김</span>':'')+
       '</div></div>';
-    const acts=document.createElement('div'); acts.className='row'; acts.style.marginTop='10px';
-    const up=document.createElement('button'); up.className='mini'; up.textContent='↑'; up.disabled=i===0;
-    up.onclick=()=>{ [ORDER[i-1],ORDER[i]]=[ORDER[i],ORDER[i-1]]; drawOrder(); };
-    const dn=document.createElement('button'); dn.className='mini'; dn.textContent='↓'; dn.disabled=i===ORDER.length-1;
-    dn.onclick=()=>{ [ORDER[i+1],ORDER[i]]=[ORDER[i],ORDER[i+1]]; drawOrder(); };
-    const hd=document.createElement('button'); hd.className='mini'; hd.textContent=r.hidden?'다시 보이기':'발표에서 숨기기';
+    const acts=document.createElement('div'); acts.className='row'; acts.style.cssText='margin-top:10px;gap:6px;padding-left:34px';
+    const hd=document.createElement('button'); hd.className='mini'; hd.textContent=r.hidden?'보이기':'숨기기';
     hd.onclick=()=>toggleHidden(r);
+    const mu=document.createElement('button'); mu.className='mini'; mu.textContent='음악 변경';
+    mu.onclick=()=>changeMusic(r);
     const dl=document.createElement('button'); dl.className='mini dgr'; dl.textContent='삭제';
     dl.onclick=()=>removeShot(r);
-    const mu=document.createElement('button'); mu.className='mini'; mu.textContent='음악 링크 바꾸기';
-    mu.onclick=()=>changeMusic(r);
-    acts.append(up,dn,hd,mu,dl); d.appendChild(acts); box.appendChild(d);
+    acts.append(hd,mu,dl); d.appendChild(acts); box.appendChild(d);
+    bindDrag(d);
   });
 }
 
-$('orderSave').addEventListener('click',async()=>{
-  if(!ORDER.length) return;
-  say($('orderMsg'),'저장 중…','');
+// ⋮⋮ 을 잡고 위아래로 끌면 목록 안에서 자리가 바뀌고, 놓으면 바로 저장한다.
+// 마우스·손가락 모두 되도록 pointer 이벤트로 직접 구현 (HTML 기본 드래그는 휴대폰에서 안 된다).
+// 주의: 끄는 도중 카드를 DOM 에서 옮기면 브라우저가 pointer capture 를 풀어버린다.
+//       그래서 움직임·손 떼기는 손잡이가 아니라 window 에서 받는다 (안 그러면 카드가 공중에 멈춘다).
+let dragging=null;
+function bindDrag(card){
+  const grip=card.querySelector('.grip'); const box=$('orderList');
+  grip.addEventListener('pointerdown',e=>{
+    if(dragging) return;
+    if(e.pointerType==='mouse' && e.button!==0) return;
+    e.preventDefault();
+    const before=[...box.children].map(c=>c.dataset.id).join(',');
+    const grabDy=e.clientY-card.getBoundingClientRect().top;
+    card.classList.add('dragging'); document.body.classList.add('dragging-any');
+
+    const move=ev=>{
+      if(ev.pointerId!==e.pointerId) return;
+      ev.preventDefault();
+      const y=ev.clientY;
+      card.style.transform='';
+      // 손 위치가 어느 카드의 가운데보다 위에 있는지로 들어갈 자리를 정한다
+      let target=null;
+      for(const o of box.children){
+        if(o===card) continue;
+        const r=o.getBoundingClientRect();
+        if(y < r.top+r.height/2){ target=o; break; }
+      }
+      if(target){ if(card.nextElementSibling!==target) box.insertBefore(card,target); }
+      else if(box.lastElementChild!==card) box.appendChild(card);
+      card.style.transform='translateY('+(y-grabDy-card.getBoundingClientRect().top)+'px)';
+      renumber();
+      if(y<90) window.scrollBy(0,-14); else if(y>innerHeight-90) window.scrollBy(0,14);   // 화면 끝이면 스크롤
+    };
+    const up=async ev=>{
+      if(ev.pointerId!==e.pointerId) return;
+      window.removeEventListener('pointermove',move);
+      window.removeEventListener('pointerup',up);
+      window.removeEventListener('pointercancel',up);
+      card.classList.remove('dragging'); card.style.transform=''; document.body.classList.remove('dragging-any');
+      dragging=null;
+      const after=[...box.children].map(c=>c.dataset.id).join(',');
+      if(after!==before) await saveOrder();
+    };
+    dragging=card;
+    window.addEventListener('pointermove',move,{passive:false});
+    window.addEventListener('pointerup',up);
+    window.addEventListener('pointercancel',up);
+  });
+}
+function renumber(){ [...$('orderList').children].forEach((c,i)=>{ const n=c.querySelector('.no'); if(n) n.textContent=i+1; }); }
+
+// 화면 순서대로 order_index 를 0,1,2… 로 다시 매긴다. 바뀐 행만 저장한다.
+async function saveOrder(){
+  const ids=[...$('orderList').children].map(c=>c.dataset.id);
+  const byId=new Map(ORDER.map(r=>[String(r.id),r]));
+  ORDER=ids.map(id=>byId.get(id));
+  say($('orderMsg'),'','');
   try{
     for(let i=0;i<ORDER.length;i++){
-      const {error}=await sb.from(TABLE).update({order_index:i}).eq('id',ORDER[i].id);
+      const r=ORDER[i];
+      if(r.order_index===i) continue;
+      const {error}=await sb.from(TABLE).update({order_index:i}).eq('id',r.id);
       if(error) throw error;
+      r.order_index=i;
+      const row=ROWS.find(x=>x.id===r.id); if(row) row.order_index=i;
     }
-    await loadAll(); say($('orderMsg'),'',''); flash('발표 순서를 저장했어요.');
-  }catch(e){ say($('orderMsg'),'저장하지 못했어요: '+(e.message||e),'err'); }
-});
+    flash('순서를 저장했어요');
+  }catch(e){
+    say($('orderMsg'),'순서를 저장하지 못했어요: '+(e.message||e),'err');
+    await loadAll();
+  }
+}
 
 async function toggleHidden(r){
   try{
@@ -690,10 +739,10 @@ function renderMembers(){
       '<div class="sm">남긴 사진 '+n+'장</div></div>'+
       (m.active?'':'<span class="tag off">숨김</span>')+'</div>';
     const acts=document.createElement('div'); acts.className='row'; acts.style.marginTop='10px';
-    const re=document.createElement('button'); re.className='mini'; re.textContent='이름 바꾸기';
+    const re=document.createElement('button'); re.className='mini'; re.textContent='이름 변경';
     re.onclick=()=>renameMember(m);
     const tg=document.createElement('button'); tg.className='mini';
-    tg.textContent=m.active?'숨기기':'다시 보이기';
+    tg.textContent=m.active?'숨기기':'보이기';
     tg.onclick=()=>patchMember(m,{active:!m.active});
     acts.append(re,tg); d.appendChild(acts); box.appendChild(d);
   });
@@ -755,7 +804,7 @@ const spy=new IntersectionObserver(entries=>{
   const vis=entries.filter(e=>e.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top)[0];
   if(vis) markNav(vis.target.id);
 },{rootMargin:'-80px 0px -60% 0px'});
-['secQuarters','secStatus','secOrder','secMembers'].forEach(id=>spy.observe($(id)));
+['secQuarters','secOrder','secMembers'].forEach(id=>spy.observe($(id)));
 
 /* ---------- 시작: 이미 로그인돼 있으면 바로 들어간다 ---------- */
 (async function(){
