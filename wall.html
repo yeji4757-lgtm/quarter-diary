@@ -326,6 +326,14 @@ body.cine #roll{opacity:0;pointer-events:none;}          /* 셔터 연출 중에
 .rp.cur{outline:2px solid var(--mint);outline-offset:3px;opacity:1;cursor:default;}
 .rp.cur .rp-img{color:var(--mint);}
 .rp:focus-visible{outline:2px solid var(--mint);outline-offset:3px;}
+/* 먼저 찍을 사람으로 당겨온 칸 — 옮겨왔다는 게 보이게 한 번 튀어 오른다 */
+.rp.moved{animation:rpPop .5s cubic-bezier(.22,1,.36,1);}
+@keyframes rpPop{0%{transform:rotate(var(--r,0deg)) translateY(8px) scale(.7);}
+  60%{transform:rotate(0deg) translateY(-6px) scale(1.12);}100%{transform:rotate(var(--r,0deg)) scale(1);}}
+.rollToast{position:fixed;left:50%;bottom:max(132px,calc(env(safe-area-inset-bottom) + 120px));transform:translateX(-50%);
+  z-index:58;font-size:12.5px;font-weight:700;color:#ece8e0;background:#15181b;border:1px solid rgba(143,201,188,.45);
+  border-radius:999px;padding:6px 14px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .25s ease;}
+.rollToast.on{opacity:1;}
 /* 새로고침 뒤 이어하기 */
 .resume{position:fixed;left:50%;top:max(54px,calc(env(safe-area-inset-top) + 40px));transform:translateX(-50%);z-index:70;
   display:flex;align-items:center;gap:8px;background:#15181b;border:1px solid #2a2e31;border-radius:999px;
@@ -828,25 +836,25 @@ const roll=document.createElement('div');
 roll.id='roll'; roll.setAttribute('role','group'); roll.setAttribute('aria-label','촬영 순서');
 document.body.appendChild(roll);
 
-function renderRoll(){
+function renderRoll(movedId){
   roll.innerHTML='';
   if(!FRAMES.length){ roll.classList.remove('on'); return; }
   FRAMES.forEach((f,i)=>{
     const shot=SHOTS.includes(i), cur=(i===idx && !shot);
     const b=document.createElement('button'); b.type='button';
-    b.className='rp'+(shot?' shot':'')+(cur?' cur':'');
+    b.className='rp'+(shot?' shot':'')+(cur?' cur':'')+(movedId!=null && f.id===movedId?' moved':'');
     b.style.setProperty('--r',(i%2?1.8:-1.8)+'deg');
     const img=document.createElement('span'); img.className='rp-img';
     if(shot){ img.style.backgroundImage=photoBG(f); img.style.backgroundPosition=photoPos(f); }
-    else img.textContent=String(i+1);
+    else img.textContent=String(f.no||i+1);
     b.appendChild(img);
     if(shot){
-      b.title=(i+1)+'번째 다시 보기'; b.setAttribute('aria-label',(i+1)+'번째 사진 다시 보기');
+      b.title=(f.no||i+1)+'번 다시 보기'; b.setAttribute('aria-label',(f.no||i+1)+'번 사진 다시 보기');
       b.onclick=()=>{ if(busy||modal.classList.contains('open')) return; openModal(i,false); };
     }else if(cur){
-      b.title='지금 차례'; b.setAttribute('aria-label',(i+1)+'번째, 지금 차례'); b.disabled=true;
+      b.title=(f.no||i+1)+'번, 지금 차례'; b.setAttribute('aria-label',(f.no||i+1)+'번, 지금 차례'); b.disabled=true;
     }else{
-      b.title=(i+1)+'번째 사람부터 찍기'; b.setAttribute('aria-label',(i+1)+'번째 사람부터 찍기');
+      b.title=(f.no||i+1)+'번 먼저 찍기'; b.setAttribute('aria-label',(f.no||i+1)+'번 먼저 찍기');
       b.onclick=()=>jumpTo(i);
     }
     roll.appendChild(b);
@@ -861,7 +869,15 @@ function jumpTo(pos){
   if(busy || modal.classList.contains('open') || pos<=idx || pos>=FRAMES.length) return;
   const [f]=FRAMES.splice(pos,1);
   FRAMES.splice(idx,0,f);
-  saveRoll(); renderRoll();
+  saveRoll(); renderRoll(f.id);
+  rollToast((f.no||pos+1)+'번을 먼저 찍어요');
+}
+let rollToastTimer=null;
+function rollToast(text){
+  let t=document.querySelector('.rollToast');
+  if(!t){ t=document.createElement('div'); t.className='rollToast'; t.setAttribute('role','status'); document.body.appendChild(t); }
+  t.textContent=text; t.classList.add('on');
+  clearTimeout(rollToastTimer); rollToastTimer=setTimeout(()=>t.classList.remove('on'),1800);
 }
 
 // 새로고침·창 튕김 대비: 순서·찍은 사람·지금 차례를 이 탭에 기억한다 (탭을 닫으면 사라짐)
@@ -997,6 +1013,7 @@ async function loadRoll(){
     });
 
     FRAMES = data.map(mapRow);
+    FRAMES.forEach((f,i)=>{ f.no=i+1; });   // 원래 발표 순서 번호 — 순서를 바꿔도 사람에게 붙어 다닌다
     FRAMES_ORIGINAL = FRAMES.slice();
     frameTotal.textContent=String(FRAMES.length).padStart(2,'0');
     frameNo.textContent='01';
