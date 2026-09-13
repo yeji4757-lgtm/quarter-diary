@@ -289,7 +289,9 @@ body.cine #shutter::after{animation:none;opacity:0;}
 .np{margin-top:10px;text-align:center;font-size:10px;letter-spacing:.02em;color:#9a938a;
   font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;min-height:14px;}
 /* name + music reveal together, after the photo develops */
-.reveal{opacity:0;transform:translateY(8px);transition:opacity .7s ease, transform .7s ease;}
+/* 팝업 폭은 사진이 정한다. 곡 제목처럼 긴 글자 줄이 폭을 늘리면(2분기 3번 곡 제목) 카드가 넓어지고
+   사진이 그 왼쪽에 붙어 가운데서 83px 밀렸다 → 글자 줄은 폭 계산에서 빼고(width:0) 카드 폭만큼만 채운다 */
+.reveal{opacity:0;transform:translateY(8px);transition:opacity .7s ease, transform .7s ease;width:0;min-width:100%;}
 .reveal.show{opacity:1;transform:none;}
 .byline{text-align:center;margin-top:18px;
   font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;
