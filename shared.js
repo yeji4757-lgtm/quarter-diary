@@ -144,11 +144,6 @@ window.QD = (function () {
     bar.className = "qd-nav" + (compact ? " qd-nav--compact" : "");
     bar.setAttribute("aria-label", "화면 이동");
 
-    const brand = document.createElement("a");
-    brand.className = "qd-nav__brand";
-    brand.href = "index.html";
-    brand.textContent = "Quarter Diary";
-
     const links = document.createElement("div");
     links.className = "qd-nav__links";
     PAGES.forEach(p => {
@@ -165,10 +160,15 @@ window.QD = (function () {
       btn.setAttribute("aria-label", "메뉴"); btn.textContent = "≡";
       btn.onclick = () => bar.classList.toggle("is-open");
       bar.append(btn, links);
+      document.body.prepend(bar);
     } else {
-      bar.append(brand, links);
+      bar.append(links);
+      document.body.prepend(bar);
+      // 고정 바가 페이지 첫 줄을 가리지 않도록 그 높이만큼 본문을 내린다.
+      // (본문이 flex 레이아웃이라 자리를 차지하는 요소를 끼워 넣을 수 없다)
+      const cur = parseFloat(getComputedStyle(document.body).paddingTop) || 0;
+      document.body.style.paddingTop = (cur + bar.offsetHeight) + "px";
     }
-    document.body.prepend(bar);
 
     // 로그인돼 있으면 "관리자" 링크 추가
     if (activeKey !== "admin") {
@@ -188,12 +188,10 @@ window.QD = (function () {
     st.id = "qd-nav-style";
     st.textContent = `
 .qd-nav{position:fixed;top:0;left:0;right:0;z-index:9000;
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  display:flex;align-items:center;justify-content:flex-end;gap:16px;
   padding:calc(10px + env(safe-area-inset-top)) 18px 10px;
   background:rgba(12,14,16,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border-bottom:1px solid #2a2e31;font-family:'NanumSquareNeo','Helvetica Neue',-apple-system,'Apple SD Gothic Neo',sans-serif;}
-.qd-nav__brand{font-size:10.5px;font-weight:800;letter-spacing:.4em;text-transform:uppercase;
-  color:#a49c90;text-decoration:none;white-space:nowrap;}
 .qd-nav__links{display:flex;gap:4px;}
 .qd-nav__links a{font-size:12.5px;font-weight:700;color:#9a938a;text-decoration:none;
   padding:6px 10px;border-radius:3px;letter-spacing:.02em;}
