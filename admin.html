@@ -594,7 +594,9 @@ function drawOrder(){
     mu.onclick=()=>changeMusic(r);
     const dl=document.createElement('button'); dl.className='mini dgr'; dl.textContent='삭제';
     dl.onclick=()=>removeShot(r);
-    acts.append(hd,mu,dl); d.appendChild(acts); box.appendChild(d);
+    const lk=document.createElement('button'); lk.className='mini'; lk.textContent='수정 링크';
+    lk.onclick=()=>copyEditLink(r,who);
+    acts.append(hd,mu,lk,dl); d.appendChild(acts); box.appendChild(d);
     bindDrag(d);
   });
 }
@@ -651,6 +653,15 @@ function bindDrag(card){
 function renumber(){ [...$('orderList').children].forEach((c,i)=>{ const n=c.querySelector('.no'); if(n) n.textContent=i+1; }); }
 
 // 화면 순서대로 order_index 를 0,1,2… 로 다시 매긴다. 바뀐 행만 저장한다.
+// 멤버가 다른 기기에서 자기 제출을 고치고 싶다고 할 때, 그 제출 전용 수정 링크를 복사해 보낸다
+async function copyEditLink(r,who){
+  const {data,error}=await sb.from('entry_tokens').select('token').eq('wall_id',r.id).maybeSingle();
+  if(error||!data){ alert('수정 링크를 찾지 못했어요.'); return; }
+  const link=location.href.replace(/admin\.html.*$/,'')+'?edit='+data.token;
+  try{ await navigator.clipboard.writeText(link); flash(who+' 님 수정 링크를 복사했어요'); }
+  catch(_){ prompt(who+' 님께 이 링크를 보내주세요', link); }
+}
+
 async function saveOrder(){
   const ids=[...$('orderList').children].map(c=>c.dataset.id);
   const byId=new Map(ORDER.map(r=>[String(r.id),r]));

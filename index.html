@@ -147,6 +147,27 @@ input[type=file]{display:none;}
 .sched a.cal:hover{border-color:rgba(143,201,188,.5);color:var(--ink);}
 .sched .meta{margin-top:14px;font-size:11px;line-height:1.6;color:var(--ink-faint);letter-spacing:.03em;text-align:center;}
 .sched .meta b{color:var(--ink-soft);font-weight:700;}
+/* 이미 올린 멤버가 다시 오면, 빈 입력칸 대신 내가 올린 사진을 먼저 보여준다 (시안 '나') */
+.mineView{width:100%;max-width:440px;display:flex;flex-direction:column;
+  min-height:calc(100dvh - 30px - 38px - env(safe-area-inset-top) - env(safe-area-inset-bottom));}
+.mineView[hidden]{display:none;}
+.mineView h1{margin-bottom:30px;}
+.mine-polar{align-self:center;width:min(72vw,260px);margin:0;background:#f3f1ea;padding:12px 12px 34px;
+  border-radius:2px;transform:rotate(-1.5deg);box-shadow:0 16px 40px rgba(0,0,0,.5);}
+.mine-photo{width:100%;aspect-ratio:1/1;background:#1d2124 center/cover no-repeat;}
+.mine-polar figcaption{margin-top:12px;text-align:center;font-size:15px;font-weight:800;color:#2a2622;
+  line-height:1.35;word-break:keep-all;overflow-wrap:anywhere;}
+.mine-meta{margin-top:26px;text-align:center;font-size:13px;line-height:1.8;color:var(--ink-soft);word-break:keep-all;}
+.mine-meta b{color:var(--ink);font-weight:700;margin-right:6px;}
+.mineView .submit{background:var(--mint);color:var(--void);border-color:var(--mint);}
+.mine-new{align-self:center;margin-top:16px;background:none;border:none;font-family:inherit;font-size:12.5px;
+  color:var(--ink-faint);text-decoration:underline;cursor:pointer;}
+.mine-new:hover{color:var(--ink-soft);}
+.fh{font-style:normal;}
+.editNote{font-size:12.5px;line-height:1.65;color:var(--mint);margin:-22px 0 22px;word-break:keep-all;}
+.editNote[hidden]{display:none;}
+.editNote button{font-family:inherit;font-size:12px;font-weight:700;color:var(--ink-soft);background:none;
+  border:none;text-decoration:underline;padding:0;margin-left:6px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -155,7 +176,8 @@ input[type=file]{display:none;}
     <div class="eyebrow">Quarter Diary</div>
     <div class="quarter" id="qBadge">Q-</div>
   </div>
-  <h1><em id="qTitle"> </em>하나의 사진, 하나의 음악을<br>골라주세요.</h1>
+  <h1><em id="qTitle"> </em><i class="fh" id="formHead">하나의 사진, 하나의 음악을<br>골라주세요.</i></h1>
+  <div class="editNote" id="editNote" hidden></div>
 
   <div class="attach" id="drop" role="button" tabindex="0" aria-label="사진 업로드">
     <div class="thumb"><div class="ph" id="preview">+</div></div>
@@ -194,10 +216,26 @@ input[type=file]{display:none;}
   <div class="foot">기획자의 독서</div>
 </form>
 
+<section class="mineView" id="mineView" hidden aria-live="polite">
+  <div class="top">
+    <div class="eyebrow">Quarter Diary</div>
+    <div class="quarter" id="mineBadge">Q-</div>
+  </div>
+  <h1><em id="mineQ"></em>이미 올리셨어요.</h1>
+  <figure class="mine-polar">
+    <div class="mine-photo" id="minePhoto" role="img" aria-label="내가 올린 사진"></div>
+    <figcaption id="mineTitle"></figcaption>
+  </figure>
+  <p class="mine-meta"><b id="mineName"></b><span id="mineWhen"></span><br><span id="mineSong"></span></p>
+  <button type="button" class="submit" id="mineEdit">수정하기</button>
+  <button type="button" class="mine-new" id="mineNew">다른 이름으로 새로 올리기</button>
+  <div class="foot">기획자의 독서</div>
+</section>
+
 <section class="done" id="done" aria-live="polite">
   <div class="mark">✓</div>
   <div class="eyebrow">Quarter Diary · <b id="doneBadge">Q-</b></div>
-  <h2>쿼터 다이어리가 제출되었어요.</h2>
+  <h2 id="doneTitle">쿼터 다이어리가 제출되었어요.</h2>
   <p class="p">계속해서 쿼터 다이어리를 쌓아나가면<br><span id="doneYear">올해</span> 연말에 회고하기 좋겠죠?</p>
 
   <div class="sched">
@@ -214,7 +252,7 @@ input[type=file]{display:none;}
     <div class="meta" id="schedMeta"></div>
   </div>
 
-  <div class="again"><button type="button" id="againBtn">다시 올리기</button></div>
+  <div class="again"><button type="button" id="againBtn">내 제출 수정하기</button></div>
   <div class="foot">기획자의 독서</div>
 </section>
 
@@ -231,6 +269,8 @@ const TABLE  = "wall";
 
 let Q = null;        // 지금 열린 분기 (quarters 행)
 let MEMBERS = [];    // 멤버 명단
+let MINE = null;     // 이번 분기에 이 기기로(또는 수정 링크로) 올린 내 제출 {token, entry}
+let EDITING = false; // 내 제출을 고치는 중인가
 
 const drop=document.getElementById('drop');
 const file=document.getElementById('file');
@@ -251,8 +291,9 @@ function applyPos(){ const p=posX.toFixed(1)+'% '+posY.toFixed(1)+'%';
 
 function showMsg(t,k){ msg.textContent=t; msg.className='msg '+(k||''); }
 function validate(){
-  const nameOk = inName.value==='__new' ? !!document.getElementById('inNewName').value.trim() : !!inName.value;
-  submit.disabled=!(picked && nameOk && inTitle.value.trim() && inMusic.value.trim());
+  const nameOk = EDITING || (inName.value==='__new' ? !!document.getElementById('inNewName').value.trim() : !!inName.value);
+  const photoOk = !!picked || EDITING;          // 고치기에서는 사진을 안 바꿔도 된다
+  submit.disabled=!(photoOk && nameOk && inTitle.value.trim() && inMusic.value.trim());
 }
 
 function handleFile(f){
@@ -355,32 +396,54 @@ document.querySelectorAll('.field input,.field select').forEach(inp=>{
 document.getElementById('form').addEventListener('submit',async e=>{
   e.preventDefault();
   if(submit.disabled) return;
-  submit.disabled=true; showMsg('확인 중…','ok');
+  submit.disabled=true; showMsg(EDITING?'고치는 중…':'올리는 중…','ok');
   if(!Q){ showMsg('분기 정보를 불러오지 못했어요. 새로고침 해주세요.','err'); submit.disabled=false; return; }
   if(MUSIC.state==='blocked' && !confirm('이 곡은 발표 화면에서 재생되지 않아요.\n그래도 이 링크로 올릴까요?')){
     submit.disabled=false; showMsg('',''); inMusic.focus(); return;
   }
+  const title=inTitle.value.trim(), music=inMusic.value.trim();
+  const pos=posX.toFixed(1)+'% '+posY.toFixed(1)+'%';
   try{
-    const sb = await QD.sb();
-    const member = await resolveMember(sb);
-    if(!member){ showMsg('이름을 골라주세요.','err'); submit.disabled=false; return; }
-    const path=Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.jpg';
-    const up=await sb.storage.from(BUCKET).upload(path,picked,{cacheControl:'3600',upsert:false,contentType:'image/jpeg'});
-    if(up.error) throw up.error;
-    const url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-    // 어느 분기 것인지 반드시 함께 저장한다. 이게 빠지면 지난 분기와 섞인다.
-    const ins=await sb.from(TABLE).insert({
-      name: member.name, member_id: member.id,
-      year: Q.year, quarter: Q.quarter,
-      title:inTitle.value.trim(), music:inMusic.value.trim(),
-      url, pos:posX.toFixed(1)+'% '+posY.toFixed(1)+'%'
+    const sb=await QD.sb();
+    // 새 제출이면 이름부터 확정한다 (사진을 먼저 올렸다가 이름이 없어 버려지는 파일을 막으려고)
+    let member=null;
+    if(!EDITING){
+      member=await resolveMember(sb);
+      if(!member){ showMsg('이름을 골라주세요.','err'); submit.disabled=false; return; }
+    }
+    // 사진은 새로 골랐을 때만 올린다
+    let url = EDITING ? MINE.entry.url : null;
+    if(picked){
+      const path=Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.jpg';
+      const up=await sb.storage.from(BUCKET).upload(path,picked,{cacheControl:'3600',upsert:false,contentType:'image/jpeg'});
+      if(up.error) throw up.error;
+      url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    }
+
+    if(EDITING){
+      // 서버 함수가 열쇠와 '업로드 열림'을 확인한 뒤에만 고친다
+      const {data:ok,error}=await sb.rpc('update_my_entry',{p_token:MINE.token,p_title:title,p_music:music,p_url:url,p_pos:pos});
+      if(error) throw error;
+      if(!ok){ showMsg('제출이 마감됐거나 지워진 제출이라 고칠 수 없어요.','err'); submit.disabled=false; return; }
+      MINE.entry=Object.assign({},MINE.entry,{title,music,url,pos});
+      showMsg('',''); showDone(true);
+      return;
+    }
+
+    // 새 제출: 서버 함수가 저장하고 '수정 열쇠'를 돌려준다 (업로드가 닫힌 분기면 거절)
+    const {data,error}=await sb.rpc('create_entry',{
+      p_year:Q.year, p_quarter:Q.quarter, p_member_id:member.id, p_name:member.name,
+      p_title:title, p_music:music, p_url:url, p_pos:pos
     });
-    if(ins.error) throw ins.error;
-    // 예전 제출을 여기서 지우지 않는다 — 이름만 보고 지우다가 지난 분기 사진까지 날아갔다.
-    // 같은 분기에 여러 번 올리면 발표 화면이 '가장 최근 1장'만 쓰고, 나머지는 관리자 화면에서 정리한다.
-    showMsg('','');
-    showDone();
-  }catch(err){ console.error(err); showMsg('올리지 못했습니다: '+(err.message||err),'err'); submit.disabled=false; }
+    if(error) throw error;
+    const row=data&&data[0];
+    if(row&&row.edit_token){
+      saveToken(Q.year,Q.quarter,row.edit_token);    // 이 기기가 열쇠를 기억 → 다음에 오면 '수정하기'
+      MINE={token:row.edit_token, entry:{entry_id:row.entry_id, year:Q.year, quarter:Q.quarter,
+        name:member.name, title, music, url, pos, upload_open:true, created_at:new Date().toISOString()}};
+    }
+    showMsg('',''); showDone(false);
+  }catch(err){ console.error(err); showMsg('올리지 못했어요: '+(err.message||err),'err'); submit.disabled=false; }
 });
 
 /* ---- 완료 화면 ---- */
@@ -403,8 +466,9 @@ function setupSchedule(){
       (Q.zoom_pw?('  ·  암호 <b>'+Q.zoom_pw+'</b>'):'');
   }
 }
-function showDone(){
+function showDone(edited){
   setupSchedule();
+  document.getElementById('doneTitle').textContent = edited ? '수정했어요.' : '쿼터 다이어리가 제출되었어요.';
   formEl.style.display='none';
   doneEl.classList.add('on');
   window.scrollTo(0,0);
@@ -418,12 +482,128 @@ function resetToForm(){
   inName.value=''; inTitle.value=''; inMusic.value=''; file.value=''; countEl.textContent='0 / 30';
   const nn=document.getElementById('inNewName'); nn.value=''; nn.hidden=true;
   MUSIC={vid:null,state:null}; setMusicNote('','');
+  // 고치기 모드에서 빠져나온다
+  EDITING=false; nameField.hidden=false; editNote.hidden=true; submit.textContent='다 골랐어요!';
+  formHead.innerHTML=FORM_HEAD;
   submit.disabled=false; validate(); showMsg('','');
 }
 document.getElementById('againBtn').addEventListener('click',()=>{
-  alert('여러 번 제출하시면, 가장 최신에 제출된 쿼터 다이어리가 저장됩니다.');
   resetToForm();
+  if(MINE) enterEdit();
 });
+
+/* ---- 내 제출 고치기 ----
+   멤버는 로그인이 없다. 제출할 때 받은 '수정 열쇠'를 이 기기에 기억해 두고, 다음에 오면 '수정하기'를 띄운다.
+   다른 기기에서는 관리자가 보내준 수정 링크(?edit=열쇠)로 들어온다. 링크로 연 기기도 그때부터 기억한다.
+   열쇠는 서버 함수로만 확인한다 — 다른 사람의 제출은 볼 수도 고칠 수도 없다. */
+const TOKENS_KEY='qd_edit_tokens';
+const nameField=inName.closest('.field');
+const editNote=document.getElementById('editNote');
+function loadTokens(){ try{ return JSON.parse(localStorage.getItem(TOKENS_KEY)||'{}'); }catch(_){ return {}; } }
+function saveToken(y,q,token){
+  try{ const t=loadTokens(); t[y+'-'+q]=token; localStorage.setItem(TOKENS_KEY,JSON.stringify(t)); }
+  catch(_){ /* 사생활 보호 모드 등에선 기억 못 함 — 수정 링크로는 여전히 고칠 수 있다 */ }
+}
+function forgetToken(y,q){
+  try{ const t=loadTokens(); delete t[y+'-'+q]; localStorage.setItem(TOKENS_KEY,JSON.stringify(t)); }catch(_){}
+}
+const bgUrl=u=>"url('"+String(u||'').replace(/['"\\]/g,'')+"')";
+
+const mineView=document.getElementById('mineView');
+const formHead=document.getElementById('formHead');
+const FORM_HEAD=formHead.innerHTML;
+
+// 9월 14일 21:03에 올림 (한국 시간)
+function uploadedAt(ts){
+  if(!ts) return '';
+  return new Date(ts).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false})+'에 올림';
+}
+// 곡 제목은 유튜브 공개 정보에서 가져온다. 못 가져오면 '음악'만
+function showSong(link){
+  const el=document.getElementById('mineSong');
+  const vid=QD.parseVid(link);
+  if(!vid){ el.textContent = link ? '♪ 음악 링크' : ''; return; }
+  el.textContent='♪ 음악';
+  fetch('https://www.youtube.com/oembed?format=json&url='+encodeURIComponent(QD.watchUrl(vid)))
+    .then(r=>r.ok?r.json():null).then(d=>{ if(d&&d.title) el.textContent='♪ '+d.title; }).catch(()=>{});
+}
+
+function showMineView(){
+  if(!MINE) return;
+  const m=MINE.entry;
+  EDITING=false;
+  formEl.style.display='none'; doneEl.classList.remove('on');
+  document.getElementById('mineBadge').textContent='Q'+m.quarter;
+  document.getElementById('mineQ').textContent = Q ? Q.label : (m.year+'년 '+m.quarter+'분기');
+  const ph=document.getElementById('minePhoto');
+  ph.style.backgroundImage=bgUrl(m.url); ph.style.backgroundPosition=m.pos||'center';
+  document.getElementById('mineTitle').textContent=m.title||'제목 없음';
+  document.getElementById('mineName').textContent=m.name||'';
+  document.getElementById('mineWhen').textContent=uploadedAt(m.created_at);
+  showSong(m.music);
+  mineView.hidden=false;
+  window.scrollTo(0,0);
+}
+document.getElementById('mineEdit').addEventListener('click',enterEdit);
+// 한 휴대폰으로 다른 사람 것을 올리는 경우
+document.getElementById('mineNew').addEventListener('click',()=>{ mineView.hidden=true; resetToForm(); });
+
+function enterEdit(){
+  if(!MINE) return;
+  const m=MINE.entry;
+  mineView.hidden=true; doneEl.classList.remove('on'); formEl.style.display='';
+  EDITING=true;
+  formHead.textContent='올린 사진을 고칩니다.';
+  nameField.hidden=true;
+  editNote.hidden=false;
+  editNote.innerHTML='';
+  editNote.append('사진은 바꾸고 싶을 때만 다시 고르세요.');
+  const cancel=document.createElement('button'); cancel.type='button'; cancel.textContent='그만두기';
+  cancel.onclick=()=>{ resetToForm(); showMineView(); };
+  editNote.appendChild(cancel);
+
+  inTitle.value=m.title||''; countEl.textContent=inTitle.value.length+' / 30';
+  inMusic.value=m.music||''; MUSIC={vid:null,state:null}; checkMusic();
+  // 올린 사진을 그대로 보여준다. 새로 고르기 전까지는 이 사진을 쓴다
+  picked=null; pickedUrl=m.url;
+  preview.style.backgroundImage=bgUrl(m.url); preview.textContent='';
+  cropImg.style.backgroundImage=bgUrl(m.url);
+  const p=String(m.pos||'50% 50%').split(' ').map(parseFloat);
+  posX=isNaN(p[0])?50:p[0]; posY=isNaN(p[1])?50:p[1]; applyPos();
+  crop.classList.add('on'); drop.classList.add('has'); cap.textContent='올린 사진 · 눌러서 바꾸기';
+  submit.textContent='수정 완료';
+  validate(); showMsg('','');
+  window.scrollTo(0,0);
+}
+
+// 시작할 때: 주소의 수정 링크 → 없으면 이 기기가 기억한 열쇠
+async function checkMine(){
+  const urlToken=new URLSearchParams(location.search).get('edit');
+  const token=urlToken || loadTokens()[Q.year+'-'+Q.quarter];
+  if(!token) return;
+  let entry=null;
+  try{
+    const sb=await QD.sb();
+    const {data,error}=await sb.rpc('get_my_entry',{p_token:token});
+    if(error) throw error;
+    entry=(data&&data[0])||null;
+  }catch(e){ console.error(e); return; }
+  if(!entry){
+    if(urlToken) showMsg('수정 링크가 올바르지 않거나, 이미 지워진 제출이에요.','err');
+    else forgetToken(Q.year,Q.quarter);           // 관리자가 지운 제출이면 기억도 지운다
+    return;
+  }
+  if(entry.year!==Q.year || entry.quarter!==Q.quarter){
+    showMsg(entry.year+'년 '+entry.quarter+'분기 제출은 이제 고칠 수 없어요.','err');
+    return;
+  }
+  saveToken(entry.year,entry.quarter,token);
+  MINE={token,entry};
+  if(urlToken){
+    history.replaceState(null,'',location.pathname);   // 주소창에 열쇠를 남기지 않는다
+    enterEdit();
+  }else showMineView();
+}
 
 /* ---- 처음 참여하는 분 ----
    참여자는 분기마다 바뀐다. 목록에 이름이 없으면 직접 적고, 올릴 때 멤버 명단에 추가한다.
@@ -529,8 +709,10 @@ async function start(){
     inName.appendChild(newOpt);
   }catch(e){ console.error(e); lockForm('멤버 명단을 불러오지 못했어요.'); return; }
 
-  // 제출 마감된 분기면 폼을 잠근다
+  // 제출 마감된 분기면 폼을 잠근다 (고치기도 업로드가 열린 동안만)
   if(!Q.upload_open){ lockForm(Q.label + ' 제출은 마감됐어요.'); return; }
+
+  await checkMine();
 }
 start();
 </script>
