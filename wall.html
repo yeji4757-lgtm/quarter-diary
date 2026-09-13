@@ -330,10 +330,14 @@ body.cine #roll{opacity:0;pointer-events:none;}          /* 셔터 연출 중에
 .rp.moved{animation:rpPop .5s cubic-bezier(.22,1,.36,1);}
 @keyframes rpPop{0%{transform:rotate(var(--r,0deg)) translateY(8px) scale(.7);}
   60%{transform:rotate(0deg) translateY(-6px) scale(1.12);}100%{transform:rotate(var(--r,0deg)) scale(1);}}
-.rollToast{position:fixed;left:50%;bottom:max(132px,calc(env(safe-area-inset-bottom) + 120px));transform:translateX(-50%);
-  z-index:58;font-size:12.5px;font-weight:700;color:#ece8e0;background:#15181b;border:1px solid rgba(143,201,188,.45);
-  border-radius:999px;padding:6px 14px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .25s ease;}
-.rollToast.on{opacity:1;}
+.rollAsk{position:fixed;left:50%;bottom:max(132px,calc(env(safe-area-inset-bottom) + 120px));transform:translateX(-50%);
+  z-index:59;display:flex;align-items:center;gap:8px;background:#15181b;border:1px solid rgba(143,201,188,.45);
+  border-radius:999px;padding:6px 6px 6px 16px;font-size:13px;color:#ece8e0;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.rollAsk button{font-family:inherit;font-size:12.5px;font-weight:800;border:none;border-radius:999px;padding:7px 13px;
+  cursor:pointer;background:var(--mint);color:#0c0e10;}
+.rollAsk button.ghost{background:transparent;color:#9a938a;}
+.rollAsk button:focus-visible{outline:2px solid var(--mint);outline-offset:2px;}
+.rp.asking{outline:2px dashed var(--mint);outline-offset:3px;opacity:1;}
 /* 새로고침 뒤 이어하기 */
 .resume{position:fixed;left:50%;top:max(54px,calc(env(safe-area-inset-top) + 40px));transform:translateX(-50%);z-index:70;
   display:flex;align-items:center;gap:8px;background:#15181b;border:1px solid #2a2e31;border-radius:999px;
@@ -855,7 +859,7 @@ function renderRoll(movedId){
       b.title=(f.no||i+1)+'번, 지금 차례'; b.setAttribute('aria-label',(f.no||i+1)+'번, 지금 차례'); b.disabled=true;
     }else{
       b.title=(f.no||i+1)+'번 사진 먼저 보기'; b.setAttribute('aria-label',(f.no||i+1)+'번 사진 먼저 보기');
-      b.onclick=()=>jumpTo(i);
+      b.onclick=()=>askJump(i);
     }
     roll.appendChild(b);
   });
@@ -870,15 +874,40 @@ function jumpTo(pos){
   const [f]=FRAMES.splice(pos,1);
   FRAMES.splice(idx,0,f);
   saveRoll(); renderRoll(f.id);   // 옮겨온 칸이 튀어 오른다
-  rollToast((f.no||pos+1)+'번 사진을 먼저 볼까요?');
 }
-let rollToastTimer=null;
-function rollToast(text){
-  let t=document.querySelector('.rollToast');
-  if(!t){ t=document.createElement('div'); t.className='rollToast'; t.setAttribute('role','status'); document.body.appendChild(t); }
-  t.textContent=text; t.classList.add('on');
-  clearTimeout(rollToastTimer); rollToastTimer=setTimeout(()=>t.classList.remove('on'),1800);
+
+// 칸을 누르면 바로 옮기지 않고 묻는다. '바꾸기'를 누른 것만 다음 순서로 옮긴다.
+// 취소·다른 곳 클릭·셔터·아무것도 안 누르고 몇 초 지남 → 원래 자리 그대로.
+// (묻지 않고 바로 옮기면, 칸을 여러 번 누를 때마다 순서가 계속 바뀌었다)
+let askTimer=null;
+function askJump(pos){
+  if(busy || modal.classList.contains('open') || pos<=idx || pos>=FRAMES.length) return;
+  closeAsk();
+  const f=FRAMES[pos];
+  const cell=roll.children[pos]; if(cell) cell.classList.add('asking');
+  const box=document.createElement('div'); box.className='rollAsk';
+  box.setAttribute('role','dialog'); box.setAttribute('aria-label','순서 바꾸기');
+  const t=document.createElement('span'); t.textContent=(f.no||pos+1)+'번 사진을 먼저 볼까요?';
+  const yes=document.createElement('button'); yes.type='button'; yes.textContent='바꾸기';
+  const no=document.createElement('button'); no.type='button'; no.className='ghost'; no.textContent='취소';
+  yes.onclick=()=>{ closeAsk(); jumpTo(pos); };
+  no.onclick=closeAsk;
+  box.append(t,yes,no);
+  document.body.appendChild(box);
+  askTimer=setTimeout(closeAsk,6000);
 }
+function closeAsk(){
+  clearTimeout(askTimer);
+  document.querySelectorAll('.rollAsk').forEach(e=>e.remove());
+  roll.querySelectorAll('.asking').forEach(e=>e.classList.remove('asking'));
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && document.querySelector('.rollAsk')) closeAsk(); });
+// 묻는 창·다른 칸 말고 다른 곳을 누르면 취소로 본다 (셔터 포함)
+document.addEventListener('pointerdown',e=>{
+  const box=document.querySelector('.rollAsk');
+  if(!box || box.contains(e.target) || e.target.closest('.rp')) return;
+  closeAsk();
+},true);
 
 // 새로고침·창 튕김 대비: 순서·찍은 사람·지금 차례를 이 탭에 기억한다 (탭을 닫으면 사라짐)
 function rollKey(){ return Q ? 'qd_roll:'+Q.year+'-'+Q.quarter : null; }
