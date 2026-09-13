@@ -308,6 +308,31 @@ body.cine #shutter::after{animation:none;opacity:0;}
 @keyframes whoHint{0%,100%{border-bottom-color:rgba(143,201,188,.3);}50%{border-bottom-color:rgba(143,201,188,.75);}}
 /* 참고: 발표 연출(토출·모프·현상)을 기기의 '동작 줄이기'/저전력과 무관하게 항상 보여주려
    reduce-motion 무력화. 접근성보다 이 웹의 의도된 연출을 우선(1회성 발표용). */
+/* 촬영 순서 — 화면 아래에 깔린 작은 폴라로이드 (시안 '나').
+   찍은 사람은 사진이 들어차고 눌러서 다시 본다. 아직인 사람은 번호만(이름은 가림), 누르면 그 사람부터 찍는다. */
+#roll{position:fixed;left:50%;bottom:max(52px,calc(env(safe-area-inset-bottom) + 40px));transform:translateX(-50%);
+  z-index:57;display:flex;align-items:flex-end;gap:clamp(5px,.8vw,10px);max-width:92vw;overflow-x:auto;
+  padding:12px 8px 6px;opacity:0;pointer-events:none;transition:opacity .5s ease;scrollbar-width:none;}
+#roll::-webkit-scrollbar{display:none;}
+#roll.on{opacity:1;pointer-events:auto;}
+body.cine #roll{opacity:0;pointer-events:none;}          /* 셔터 연출 중에는 숨긴다 */
+.rp{flex:none;width:clamp(30px,3.1vw,50px);padding:3px 3px 10px;background:#f3f1ea;border:none;border-radius:1px;
+  cursor:pointer;transform:rotate(var(--r,0deg));box-shadow:0 4px 10px rgba(0,0,0,.45);
+  transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s ease,opacity .25s ease;}
+.rp-img{display:flex;align-items:center;justify-content:center;aspect-ratio:1/1;background:#1b1e21 center/cover no-repeat;
+  font-size:clamp(8px,.8vw,11px);font-weight:800;color:#6b6258;}
+.rp:not(.shot):not(.cur){opacity:.55;}
+.rp:hover:not(:disabled){transform:rotate(0deg) translateY(-6px);box-shadow:0 10px 22px rgba(0,0,0,.5);opacity:1;}
+.rp.cur{outline:2px solid var(--mint);outline-offset:3px;opacity:1;cursor:default;}
+.rp.cur .rp-img{color:var(--mint);}
+.rp:focus-visible{outline:2px solid var(--mint);outline-offset:3px;}
+/* 새로고침 뒤 이어하기 */
+.resume{position:fixed;left:50%;top:max(54px,calc(env(safe-area-inset-top) + 40px));transform:translateX(-50%);z-index:70;
+  display:flex;align-items:center;gap:8px;background:#15181b;border:1px solid #2a2e31;border-radius:999px;
+  padding:6px 6px 6px 16px;font-size:13px;color:#ece8e0;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.resume button{font-family:inherit;font-size:12.5px;font-weight:800;border:none;border-radius:999px;padding:7px 13px;
+  cursor:pointer;background:var(--mint);color:#0c0e10;}
+.resume button.ghost{background:transparent;color:#9a938a;}
 </style>
 </head>
 <body>
@@ -333,7 +358,7 @@ body.cine #shutter::after{animation:none;opacity:0;}
 <div id="flash"></div>
 <div id="viewfinder"><span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span><span class="ch"></span></div>
 <div id="flashBurst"></div>
-<button id="resetBtn">다시보기 ↻</button>
+<button id="resetBtn">처음부터 다시 ↻</button>
 <div class="counter"><b id="frameNo">01</b> / <b id="frameTotal">04</b></div>
 
 <div id="modal">
@@ -474,6 +499,9 @@ resetBtn.addEventListener('click',()=>{
   document.querySelectorAll('.freeprint').forEach(e=>e.remove());
   idx=0; busy=false; frameNo.textContent='01';
   SHOTS=[];
+  if(FRAMES_ORIGINAL.length) FRAMES=FRAMES_ORIGINAL.slice();   // 건너뛰기로 바뀐 순서도 원래대로
+  clearRoll(); renderRoll();
+  const rc=document.querySelector('.resume'); if(rc) rc.remove();
   resetBtn.classList.remove('show');
   shutter.style.pointerEvents='';
   eyebrow.classList.remove('fade-out');
@@ -668,6 +696,7 @@ function closeModal(){
     frameNo.textContent=String(Math.min(idx+1,FRAMES.length)).padStart(2,'0');
     busy=false;
     modal.dataset.capture='0';
+    saveRoll(); renderRoll();
     if(idx>=FRAMES.length){ revealWall(); }
     else{ hint.classList.remove('fade-out'); }
   }
@@ -706,6 +735,7 @@ function fitCaption(pin){
 }
 /* place all shot photos on the wall in a count-aware grid, then reveal */
 function revealWall(){
+  roll.classList.remove('on');
   hint.classList.add('fade-out');
   shutter.style.pointerEvents='none';
   eyebrow.classList.add('fade-out');
@@ -786,8 +816,90 @@ musicBtn.addEventListener('click',()=>{
   }catch(e){ nowPlaying.textContent='재생할 수 없습니다'; }
 });
 modalClose.addEventListener('click',closeModal);
-modal.addEventListener('click',(e)=>{ if(e.target===modal) closeModal(); });
-document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModal(); });
+// 현상 중(이름·음악이 뜨기 전)에는 배경 클릭·Esc 로 닫히지 않게 한다.
+// 예전엔 여기서 닫히면 이름·음악 공개 없이 다음 사람으로 넘어가고 되돌릴 수 없었다. (× 버튼은 그대로 닫힘)
+function safeToClose(){ return !(modal.dataset.capture==='1' && !revealBlock.classList.contains('show')); }
+modal.addEventListener('click',(e)=>{ if(e.target===modal && safeToClose()) closeModal(); });
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape' && modal.classList.contains('open') && safeToClose()) closeModal(); });
+
+/* ===== 촬영 순서 줄 (작은 폴라로이드) · 건너뛰기 · 이어하기 ===== */
+let FRAMES_ORIGINAL=[];          // 불러온 원래 발표 순서 ('처음부터 다시' 때 되돌린다)
+const roll=document.createElement('div');
+roll.id='roll'; roll.setAttribute('role','group'); roll.setAttribute('aria-label','촬영 순서');
+document.body.appendChild(roll);
+
+function renderRoll(){
+  roll.innerHTML='';
+  if(!FRAMES.length){ roll.classList.remove('on'); return; }
+  FRAMES.forEach((f,i)=>{
+    const shot=SHOTS.includes(i), cur=(i===idx && !shot);
+    const b=document.createElement('button'); b.type='button';
+    b.className='rp'+(shot?' shot':'')+(cur?' cur':'');
+    b.style.setProperty('--r',(i%2?1.8:-1.8)+'deg');
+    const img=document.createElement('span'); img.className='rp-img';
+    if(shot){ img.style.backgroundImage=photoBG(f); img.style.backgroundPosition=photoPos(f); }
+    else img.textContent=String(i+1);
+    b.appendChild(img);
+    if(shot){
+      b.title=(i+1)+'번째 다시 보기'; b.setAttribute('aria-label',(i+1)+'번째 사진 다시 보기');
+      b.onclick=()=>{ if(busy||modal.classList.contains('open')) return; openModal(i,false); };
+    }else if(cur){
+      b.title='지금 차례'; b.setAttribute('aria-label',(i+1)+'번째, 지금 차례'); b.disabled=true;
+    }else{
+      b.title=(i+1)+'번째 사람부터 찍기'; b.setAttribute('aria-label',(i+1)+'번째 사람부터 찍기');
+      b.onclick=()=>jumpTo(i);
+    }
+    roll.appendChild(b);
+  });
+  if(idx<FRAMES.length) roll.classList.add('on');
+  const cur=roll.querySelector('.cur'); if(cur) cur.scrollIntoView({block:'nearest',inline:'center'});
+}
+
+// 아직 안 찍은 사람을 '다음 차례'로 당긴다. 원래 다음 차례였던 사람부터는 한 칸씩 뒤로 밀린다.
+// 이미 찍은 사람(idx 앞쪽)은 자리가 안 바뀌어서 SHOTS 는 그대로 맞다.
+function jumpTo(pos){
+  if(busy || modal.classList.contains('open') || pos<=idx || pos>=FRAMES.length) return;
+  const [f]=FRAMES.splice(pos,1);
+  FRAMES.splice(idx,0,f);
+  saveRoll(); renderRoll();
+}
+
+// 새로고침·창 튕김 대비: 순서·찍은 사람·지금 차례를 이 탭에 기억한다 (탭을 닫으면 사라짐)
+function rollKey(){ return Q ? 'qd_roll:'+Q.year+'-'+Q.quarter : null; }
+function saveRoll(){
+  const k=rollKey(); if(!k) return;
+  try{ sessionStorage.setItem(k, JSON.stringify({ ids:FRAMES.map(f=>f.id), shots:SHOTS.map(i=>FRAMES[i]&&FRAMES[i].id), idx })); }
+  catch(_){ /* 저장 못 해도 발표는 계속된다 */ }
+}
+function clearRoll(){ const k=rollKey(); if(!k) return; try{ sessionStorage.removeItem(k); }catch(_){} }
+
+function offerResume(){
+  const k=rollKey(); let saved=null;
+  try{ saved=JSON.parse(sessionStorage.getItem(k)||'null'); }catch(_){}
+  if(!saved || !saved.idx) return;
+  const byId=new Map(FRAMES.map(f=>[f.id,f]));
+  const ordered=(saved.ids||[]).map(id=>byId.get(id)).filter(Boolean);
+  if(ordered.length!==FRAMES.length){ clearRoll(); return; }     // 그 사이 사진이 바뀌었으면 처음부터
+  const done=Math.min(saved.idx,FRAMES.length), all=(done>=FRAMES.length);
+  const chip=document.createElement('div'); chip.className='resume'; chip.setAttribute('role','status');
+  const t=document.createElement('span'); t.textContent= all ? '모두 찍은 상태예요' : (done+1)+'번째부터 이어서 할까요?';
+  const yes=document.createElement('button'); yes.type='button'; yes.textContent= all ? '벽 보기' : '이어서';
+  const no=document.createElement('button'); no.type='button'; no.className='ghost'; no.textContent='처음부터';
+  yes.onclick=()=>{
+    FRAMES=ordered;
+    const pos=new Map(FRAMES.map((f,i)=>[f.id,i]));
+    SHOTS=(saved.shots||[]).map(id=>pos.get(id)).filter(v=>v!=null);
+    idx=done;
+    frameNo.textContent=String(Math.min(idx+1,FRAMES.length)).padStart(2,'0');
+    brandFoot.classList.add('fade-out');
+    chip.remove();
+    if(all){ document.body.classList.add('cine'); revealWall(); }
+    else renderRoll();
+  };
+  no.onclick=()=>{ clearRoll(); chip.remove(); };
+  chip.append(t,yes,no);
+  document.body.appendChild(chip);
+}
 
 /* dev/preview shortcut: open with #wall to jump straight to the finished wall */
 function jumpToWall(){
@@ -806,7 +918,7 @@ addEventListener('hashchange',()=>{ if(location.hash==='#wall') jumpToWall(); })
    - 발표 순서 = order_index 오름차순 (번호 없는 건 뒤로, 올린 순)
    ========================================================================= */
 function mapRow(r){
-  return { q:'Q'+r.quarter, date:String(r.year),
+  return { id:r.id, q:'Q'+r.quarter, date:String(r.year),
     name:(r.name||'').trim(), title:(r.title||'').trim(),
     url:r.url||'', pos:r.pos||'center', yt:r.music||'' };
 }
@@ -885,10 +997,13 @@ async function loadRoll(){
     });
 
     FRAMES = data.map(mapRow);
+    FRAMES_ORIGINAL = FRAMES.slice();
     frameTotal.textContent=String(FRAMES.length).padStart(2,'0');
     frameNo.textContent='01';
     // 첫 몇 장 미리 받아둔다(현상할 때 빈 화면 방지)
     FRAMES.slice(0,3).forEach(f=>{ if(f.url){ const im=new Image(); im.src=f.url; } });
+    renderRoll();
+    offerResume();
   }catch(e){
     console.error('롤 불러오기 실패:', e);
     showEmpty('사진을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침 해주세요.');
