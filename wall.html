@@ -648,16 +648,34 @@ function openModal(fi, captureMode, morphFrom){
     if(!nm){ whoBlank.style.animation='none'; whoBlank.style.borderBottomColor='transparent'; }
     whoBlank.addEventListener('click',()=>{
       if(whoBlank.classList.contains('filled')||!nm) return;
-      whoBlank.classList.add('filled');
+      // 이름이 밑줄 위로 천천히 떠오른 뒤 밑줄이 사라진다 (시안 '나', 전체 약 1.5초).
+      // 예전엔 빈칸이 다 사라지기 전에 0.2초 만에 이름으로 바뀌고, 폭이 한 번에 변해 옆 글자가 튀어서 급해 보였다.
+      // 이름이 들어갔을 때의 폭을 제자리에서 잰다(화면에 그리기 전이라 보이지 않는다).
+      // 복제본을 따로 띄워 재면 폭이 10px 좁게 나와 떠오르는 이름이 '님'자를 덮었다.
+      const startW=whoBlank.getBoundingClientRect().width;
+      const blankText=whoBlank.textContent;
+      whoBlank.textContent=nm;
+      const endW=whoBlank.getBoundingClientRect().width;
+      whoBlank.textContent=blankText;
       whoBlank.style.animation='none';
-      // fade the blank out, swap in the name, then let it drift softly in
-      whoBlank.style.opacity='0'; whoBlank.style.transform='translateY(-3px)';
-      setTimeout(()=>{
-        whoBlank.textContent=nm;
-        whoBlank.style.opacity='0'; whoBlank.style.transform='translateY(5px)';
-        void whoBlank.offsetWidth;
-        whoBlank.style.opacity='1'; whoBlank.style.transform='translateY(0)';
-      },200);
+      whoBlank.style.borderBottomColor='rgba(143,201,188,.75)';   // 떠오르는 동안 밑줄은 남겨 둔다
+      whoBlank.classList.add('filled');
+      whoBlank.style.transition='width .7s cubic-bezier(.22,1,.36,1),border-color .6s ease';
+      whoBlank.style.width=startW+'px'; whoBlank.style.minWidth='0';
+      // overflow:hidden 은 줄 기준선을 바꿔 글줄이 들썩이므로, 잘라내기는 clip-path 로 한다
+      whoBlank.style.clipPath='inset(-4px -30% 0 -30%)';
+      const rise=document.createElement('span');
+      rise.textContent=nm;
+      // 칸 폭이 늘어나는 도중에 이름이 두 줄로 꺾이면 팝업 전체가 들썩이므로 한 줄로 고정
+      rise.style.cssText='display:inline-block;white-space:nowrap;opacity:0;transform:translateY(105%);'+
+        'transition:transform 1.05s cubic-bezier(.16,1,.3,1),opacity .7s ease;';
+      whoBlank.textContent='';
+      whoBlank.appendChild(rise);
+      void whoBlank.offsetWidth;
+      whoBlank.style.width=endW+'px';
+      rise.style.opacity='1'; rise.style.transform='translateY(0)';
+      setTimeout(()=>{ whoBlank.style.borderBottomColor='transparent'; },900);
+      setTimeout(()=>{ whoBlank.style.clipPath=''; whoBlank.style.width=''; whoBlank.style.minWidth=''; },1600);
     });
   }
   currentVid=parseVid(f.yt);
