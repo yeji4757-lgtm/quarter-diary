@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>2분기 쿼터다이어리 - 업로드 페이지</title>
+<title>쿼터다이어리 - 업로드</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%230c0e10'/%3E%3Crect x='24' y='20' width='52' height='60' rx='4' fill='%23fefefe'/%3E%3Crect x='30' y='26' width='40' height='38' rx='2' fill='%238fc9bc'/%3E%3Ccircle cx='50' cy='45' r='9' fill='%230c0e10' opacity='.35'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquareNeo@1.0/nanumsquareneo.css" rel="stylesheet">
+<script src="shared.js"></script>
 <style>
 :root{
   --mint:#8fc9bc; --mint-ink:#2f8f78; --mint-soft:#bfe0d7;
@@ -55,10 +56,16 @@ h1 span{color:var(--mint);}
 .field label{display:block;font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
   color:var(--ink-faint);margin-bottom:10px;}
 .field .count{float:right;font-size:10px;color:var(--ink-faint);font-weight:400;letter-spacing:.04em;}
-.field input{width:100%;border:none;background:transparent;color:var(--ink);
+.field input,.field select{width:100%;border:none;background:transparent;color:var(--ink);
   font-size:16px;font-family:inherit;font-weight:400;padding:0;letter-spacing:.01em;}
 .field input::placeholder{color:#4f4a41;}
-.field input:focus{outline:none;}
+.field input:focus,.field select:focus{outline:none;}
+/* 이름 고르기 — 기본 select 화살표를 민트색 꺾쇠로 교체 */
+.field select{appearance:none;-webkit-appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238fc9bc' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 2px center;padding-right:20px;}
+.field select:invalid{color:#4f4a41;}            /* 아직 안 고른 상태는 흐리게 */
+.field select option{background:#15181b;color:var(--ink);}
 
 .submit{margin-top:34px;width:100%;padding:16px;cursor:pointer;border-radius:2px;
   border:1px solid var(--mint-ink);background:transparent;color:var(--mint-soft);
@@ -140,9 +147,9 @@ input[type=file]{display:none;}
 <form class="wrap" id="form" novalidate>
   <div class="top">
     <div class="eyebrow">Quarter Diary</div>
-    <div class="quarter">Q2</div>
+    <div class="quarter" id="qBadge">Q-</div>
   </div>
-  <h1><em>2026년 2분기</em>하나의 사진, 하나의 음악을<br>골라주세요.</h1>
+  <h1><em id="qTitle"> </em>하나의 사진, 하나의 음악을<br>골라주세요.</h1>
 
   <div class="attach" id="drop" role="button" tabindex="0" aria-label="사진 업로드">
     <div class="thumb"><div class="ph" id="preview">+</div></div>
@@ -161,7 +168,7 @@ input[type=file]{display:none;}
   <div class="fields">
     <div class="field">
       <label>이름</label>
-      <input type="text" id="inName" placeholder="닉네임을 써도 괜찮아요." maxlength="20" autocomplete="off">
+      <select id="inName" required><option value="" disabled selected>이름을 골라주세요</option></select>
     </div>
     <div class="field">
       <label>사진 제목 <span class="count" id="count">0 / 30</span></label>
@@ -181,12 +188,12 @@ input[type=file]{display:none;}
 
 <section class="done" id="done" aria-live="polite">
   <div class="mark">✓</div>
-  <div class="eyebrow">Quarter Diary · <b>Q2</b></div>
+  <div class="eyebrow">Quarter Diary · <b id="doneBadge">Q-</b></div>
   <h2>쿼터 다이어리가 제출되었어요.</h2>
-  <p class="p">계속해서 쿼터 다이어리를 쌓아나가면<br>2026년 연말에 회고하기 좋겠죠?</p>
+  <p class="p">계속해서 쿼터 다이어리를 쌓아나가면<br><span id="doneYear">올해</span> 연말에 회고하기 좋겠죠?</p>
 
   <div class="sched">
-    <div class="cue">2분기 쿼터 다이어리 일정을 저장해두세요.</div>
+    <div class="cue"><span id="schedQ">이번 분기</span> 쿼터 다이어리 일정을 저장해두세요.</div>
     <div class="when">
       <div class="lab">일정 안내</div>
       <span class="d" id="schedDate">날짜 미정</span>
@@ -205,41 +212,17 @@ input[type=file]{display:none;}
 
 <script>
 /* =========================================================================
-   공유 저장소 설정 (Supabase)
-   -------------------------------------------------------------------------
-   1) supabase.com 무료 프로젝트 생성
-   2) Storage 에 'photos' 버킷 만들기 (Public)
-   3) Table 'wall' 생성 (SQL Editor에 아래 붙여넣기):
-      create table wall (
-        id bigint generated always as identity primary key,
-        created_at timestamptz default now(),
-        name text, title text, music text, url text, pos text,
-        hidden boolean default false,   -- 어드민: 발표에서 숨기기
-        order_index int                 -- 어드민: 수동 발표 순서(옵션)
-      );
-      alter table wall enable row level security;
-      create policy "read"   on wall for select using (true);
-      create policy "insert" on wall for insert with check (true);
-      -- Storage: 'photos' 버킷 Public + 업로드 허용 정책
-   4) 아래 두 값을 Project Settings > API 에서 복사해 넣기.
-      비어 있으면 자동으로 '로컬 미리보기'(이 브라우저에서만)로 동작합니다.
+   업로드 화면
+   - 분기 정보(라벨·모임 날짜·줌·업로드 열림)는 Supabase `quarters` 테이블에서 읽는다.
+     예전엔 이 파일에 하드코딩돼 있어서 분기마다 코드를 고쳐 배포해야 했다.
+   - 멤버 이름은 `members` 테이블에서 골라 넣는다(연말에 사람별로 묶어보기 위함).
+   - 연결 설정은 shared.js 에 있다.
    ========================================================================= */
-const SUPABASE_URL = "https://bziqpggivloolhtjkbih.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_Mb6cJdVNvQLiFwIVqMWD6Q_EGHmQ4pR";
 const BUCKET = "photos";
 const TABLE  = "wall";
-const SHARED = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
-let sb=null;
 
-/* ===== 다음 모임(제출 완료 화면에 노출) ===== */
-const SESSION = {
-  zoom:      "https://us06web.zoom.us/j/81777036708?pwd=LGTEF8BPgZqaWwY3fb8MUXmJYp7Sb2.1",
-  meetingId: "817 7703 6708",
-  passcode:  "707030",
-  date:  "2026-07-05", start: "20:00", end: "22:00", tz: "Asia/Seoul",
-  dateLabel: "2026. 7. 5 (일)",
-  timeLabel: "오후 8:00 · 온라인(Zoom)"
-};
+let Q = null;        // 지금 열린 분기 (quarters 행)
+let MEMBERS = [];    // 멤버 명단
 
 const drop=document.getElementById('drop');
 const file=document.getElementById('file');
@@ -258,20 +241,6 @@ function clampPos(v){ return Math.max(0,Math.min(100,v)); }
 function applyPos(){ const p=posX.toFixed(1)+'% '+posY.toFixed(1)+'%';
   cropImg.style.backgroundPosition=p; preview.style.backgroundPosition=p; }
 
-if(SHARED){
-  // 공유 모드 — 별도 배너 없이 그대로 사용
-}
-
-function initSupabase(){
-  return new Promise(res=>{
-    if(!SHARED) return res(false);
-    const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-    s.onload=()=>{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY); res(true); };
-    s.onerror=()=>res(false);
-    document.head.appendChild(s);
-  });
-}
 function showMsg(t,k){ msg.textContent=t; msg.className='msg '+(k||''); }
 function validate(){ submit.disabled=!(picked && inName.value.trim() && inTitle.value.trim() && inMusic.value.trim()); }
 
@@ -364,9 +333,9 @@ function endDrag(){ dragging=false; cropImg.classList.remove('dragging'); }
 cropImg.addEventListener('pointerup',endDrag);
 cropImg.addEventListener('pointercancel',endDrag);
 
-[inName,inTitle,inMusic].forEach(el=>el.addEventListener('input',validate));
+[inName,inTitle,inMusic].forEach(el=>{ el.addEventListener('input',validate); el.addEventListener('change',validate); });
 inTitle.addEventListener('input',()=>{ countEl.textContent=inTitle.value.length+' / 30'; });
-document.querySelectorAll('.field input').forEach(inp=>{
+document.querySelectorAll('.field input,.field select').forEach(inp=>{
   const wrap=inp.closest('.field');
   inp.addEventListener('focus',()=>wrap.classList.add('focus'));
   inp.addEventListener('blur',()=>wrap.classList.remove('focus'));
@@ -376,28 +345,25 @@ document.getElementById('form').addEventListener('submit',async e=>{
   e.preventDefault();
   if(submit.disabled) return;
   submit.disabled=true; showMsg('확인 중…','ok');
-  const entry={ name:inName.value.trim(), title:inTitle.value.trim(), music:inMusic.value.trim(), pos:posX.toFixed(1)+'% '+posY.toFixed(1)+'%' };
+  if(!Q){ showMsg('분기 정보를 불러오지 못했어요. 새로고침 해주세요.','err'); submit.disabled=false; return; }
+  const member = MEMBERS.find(m=>m.id===inName.value);
+  if(!member){ showMsg('이름을 골라주세요.','err'); submit.disabled=false; return; }
   try{
-    if(SHARED){
-      if(!sb) await initSupabase();
-      const path=Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.jpg';
-      const up=await sb.storage.from(BUCKET).upload(path,picked,{cacheControl:'3600',upsert:false,contentType:'image/jpeg'});
-      if(up.error) throw up.error;
-      entry.url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-      const ins=await sb.from(TABLE).insert({name:entry.name,title:entry.title,music:entry.music,url:entry.url,pos:entry.pos});
-      if(ins.error) throw ins.error;
-      // 같은 이름의 이전 제출은 정리 — 최신 한 장만 남긴다
-      try{
-        const {data:olds}=await sb.from(TABLE).select('url').eq('name',entry.name).neq('url',entry.url);
-        await sb.from(TABLE).delete().eq('name',entry.name).neq('url',entry.url);
-        if(olds&&olds.length){
-          const paths=olds.map(r=>{ const p=(r.url||'').split('/'+BUCKET+'/')[1]; return p?decodeURIComponent(p):null; }).filter(Boolean);
-          if(paths.length) await sb.storage.from(BUCKET).remove(paths);
-        }
-      }catch(cleanupErr){ console.warn('이전 제출 정리 실패(무시 가능):',cleanupErr); }
-    }else{
-      await new Promise(r=>setTimeout(r,650)); // local preview: fake the save
-    }
+    const sb = await QD.sb();
+    const path=Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.jpg';
+    const up=await sb.storage.from(BUCKET).upload(path,picked,{cacheControl:'3600',upsert:false,contentType:'image/jpeg'});
+    if(up.error) throw up.error;
+    const url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    // 어느 분기 것인지 반드시 함께 저장한다. 이게 빠지면 지난 분기와 섞인다.
+    const ins=await sb.from(TABLE).insert({
+      name: member.name, member_id: member.id,
+      year: Q.year, quarter: Q.quarter,
+      title:inTitle.value.trim(), music:inMusic.value.trim(),
+      url, pos:posX.toFixed(1)+'% '+posY.toFixed(1)+'%'
+    });
+    if(ins.error) throw ins.error;
+    // 예전 제출을 여기서 지우지 않는다 — 이름만 보고 지우다가 지난 분기 사진까지 날아갔다.
+    // 같은 분기에 여러 번 올리면 발표 화면이 '가장 최근 1장'만 쓰고, 나머지는 관리자 화면에서 정리한다.
     showMsg('','');
     showDone();
   }catch(err){ console.error(err); showMsg('올리지 못했습니다: '+(err.message||err),'err'); submit.disabled=false; }
@@ -408,31 +374,19 @@ const formEl=document.getElementById('form');
 const doneEl=document.getElementById('done');
 function pad(n){return String(n).padStart(2,'0');}
 function setupSchedule(){
-  document.getElementById('schedDate').textContent=SESSION.dateLabel||'날짜 미정';
-  document.getElementById('schedTime').textContent=SESSION.timeLabel||'';
+  document.getElementById('schedDate').textContent=QD.dateLabel(Q)||'날짜 미정';
+  document.getElementById('schedTime').textContent=QD.timeLabel(Q)||'';
   const zl=document.getElementById('zoomLink');
-  if(SESSION.zoom){ zl.href=SESSION.zoom; } else { zl.style.display='none'; }
-  // 구글 캘린더 저장 링크 (줌 링크·회의 ID·암호를 일정 안에 담아 전달)
+  if(Q && Q.zoom_url){ zl.href=Q.zoom_url; zl.style.display=''; } else { zl.style.display='none'; }
+  // 구글 캘린더 저장 링크 (줌 링크·회의 ID·암호를 일정 안에 담아 전달) — shared.js 가 만든다
   const cal=document.getElementById('calLink');
-  if(SESSION.date && SESSION.start && SESSION.end){
-    const d=SESSION.date.replace(/-/g,'');
-    const s=d+'T'+SESSION.start.replace(':','')+'00';
-    const e=d+'T'+SESSION.end.replace(':','')+'00';
-    const details=['기획자의 독서 · 2분기 쿼터다이어리 회고 모임','',
-      SESSION.zoom?('Zoom 참가: '+SESSION.zoom):'',
-      SESSION.meetingId?('회의 ID: '+SESSION.meetingId):'',
-      SESSION.passcode?('암호: '+SESSION.passcode):''].filter(Boolean).join('\n');
-    const params=new URLSearchParams({action:'TEMPLATE',
-      text:'[기획자의 독서] 2분기 쿼터다이어리',
-      details:details, location:SESSION.zoom||'Zoom',
-      dates:s+'/'+e, ctz:SESSION.tz||'Asia/Seoul'});
-    cal.href='https://calendar.google.com/calendar/render?'+params.toString();
-  } else { cal.style.display='none'; }
+  const href=QD.calendarLink(Q);
+  if(href){ cal.href=href; cal.style.display=''; } else { cal.style.display='none'; }
   // 회의 ID / 암호 안내
   const meta=document.getElementById('schedMeta');
-  if(meta){
-    meta.innerHTML=(SESSION.meetingId?('회의 ID <b>'+SESSION.meetingId+'</b>'):'')+
-      (SESSION.passcode?('  ·  암호 <b>'+SESSION.passcode+'</b>'):'');
+  if(meta && Q){
+    meta.innerHTML=(Q.zoom_id?('회의 ID <b>'+Q.zoom_id+'</b>'):'')+
+      (Q.zoom_pw?('  ·  암호 <b>'+Q.zoom_pw+'</b>'):'');
   }
 }
 function showDone(){
@@ -455,7 +409,51 @@ document.getElementById('againBtn').addEventListener('click',()=>{
   resetToForm();
 });
 
-if(SHARED) initSupabase();
+/* ---- 시작: 분기 정보와 멤버 명단을 먼저 불러온다 ---- */
+const qBadge=document.getElementById('qBadge');
+const qTitle=document.getElementById('qTitle');
+
+// "2026년 3분기" → "Q3"
+function badgeOf(q){ return q ? ('Q'+q.quarter) : 'Q-'; }
+
+function lockForm(text){
+  submit.disabled=true;
+  [inName,inTitle,inMusic].forEach(el=>el.disabled=true);
+  drop.style.pointerEvents='none'; drop.style.opacity='.45';
+  showMsg(text,'err');
+}
+
+async function start(){
+  QD.nav('upload');
+  try{
+    Q = await QD.currentQuarter();
+  }catch(e){
+    console.error(e); lockForm('분기 정보를 불러오지 못했어요. 잠시 뒤 새로고침 해주세요.'); return;
+  }
+  if(!Q){ lockForm('아직 열린 분기가 없어요. 관리자에게 알려주세요.'); return; }
+
+  // 분기 문구 채우기
+  document.title = Q.label + ' 쿼터다이어리 - 업로드';
+  qBadge.textContent = badgeOf(Q);
+  qTitle.textContent = Q.label;
+  document.getElementById('doneBadge').textContent = badgeOf(Q);
+  document.getElementById('doneYear').textContent = Q.year + '년';
+  document.getElementById('schedQ').textContent = Q.label;
+
+  // 멤버 명단 채우기
+  try{
+    MEMBERS = await QD.listMembers();
+    MEMBERS.forEach(m=>{
+      const o=document.createElement('option');
+      o.value=m.id; o.textContent=m.name;
+      inName.appendChild(o);
+    });
+  }catch(e){ console.error(e); lockForm('멤버 명단을 불러오지 못했어요.'); return; }
+
+  // 제출 마감된 분기면 폼을 잠근다
+  if(!Q.upload_open){ lockForm(Q.label + ' 제출은 마감됐어요.'); return; }
+}
+start();
 </script>
 </body>
 </html>

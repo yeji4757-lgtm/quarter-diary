@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>2분기 쿼터다이어리 - 공유 페이지</title>
+<title>쿼터다이어리 - 발표</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%230c0e10'/%3E%3Crect x='24' y='20' width='52' height='60' rx='4' fill='%23fefefe'/%3E%3Crect x='30' y='26' width='40' height='38' rx='2' fill='%238fc9bc'/%3E%3Ccircle cx='50' cy='45' r='9' fill='%230c0e10' opacity='.35'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquareNeo@1.0/nanumsquareneo.css" rel="stylesheet">
+<script src="shared.js"></script>
 <style>
 :root{
   --mint:#8fc9bc; --mint-ink:#2f8f78;
@@ -311,7 +312,7 @@ body.cine #shutter::after{animation:none;opacity:0;}
 <body>
 <div class="bar top"></div>
 <div class="bar bot"></div>
-<div class="eyebrow" id="eyebrow">Quarter Diary · <b>2분기</b></div>
+<div class="eyebrow" id="eyebrow">Quarter Diary</div>
 <div class="brand-foot" id="brandFoot">기획자의 독서</div>
 <div id="world">
   <div class="rig" id="rig">
@@ -326,7 +327,7 @@ body.cine #shutter::after{animation:none;opacity:0;}
 </div>
 <div class="tapbtn" id="hint" style="display:none"></div>
 <div id="wall"></div>
-<div class="wall-title" id="wallTitle"><div class="big">2026 · 2Q · QUARTER DIARY</div><div class="sub">한 장의 장면. 한 곡의 음악. 한 줄 문장으로 기억하기</div></div>
+<div class="wall-title" id="wallTitle"><div class="big" id="wallTitleBig">QUARTER DIARY</div><div class="sub">한 장의 장면. 한 곡의 음악. 한 줄 문장으로 기억하기</div></div>
 <div class="wall-foot" id="wallFoot">기획자의 독서</div>
 <div id="flash"></div>
 <div id="viewfinder"><span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span><span class="ch"></span></div>
@@ -357,22 +358,18 @@ body.cine #shutter::after{animation:none;opacity:0;}
    여기에 키를 넣으면, 멤버들이 올린 사진을 자동으로 불러와 발표 롤로 만듭니다.
    비어 있으면 아래 자리표시 데모로 동작합니다(테스트용).
    ========================================================================= */
-const SUPABASE_URL = "https://bziqpggivloolhtjkbih.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_Mb6cJdVNvQLiFwIVqMWD6Q_EGHmQ4pR";
 const BUCKET = "photos";
 const TABLE  = "wall";
-const SHARED = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 
-// 발표 순서 = 업로드 역순(최근에 올린 사람이 먼저). 필요시 false로.
-const PRESENT_REVERSE = true;
+/* 발표 순서 = order_index 오름차순(작은 수가 먼저). 관리자 화면에서 보는 순서와 같다.
+   예전엔 거꾸로 재생했는데(PRESENT_REVERSE), 순서를 정할 때 늘 헷갈려서 없앴다. */
 
-/* 자리표시 데모(키가 없을 때) — 실제 연결되면 이 배열은 데이터로 대체됩니다. */
-let FRAMES=[
-  {q:"Q2",date:"2026",name:"이예지",title:"창밖의 계절",grad:"linear-gradient(135deg,#e8a07a,#caa07a,#7a9bb0)",yt:""},
-  {q:"Q2",date:"2026",name:"김서준",title:"퇴근길 한 컷",grad:"linear-gradient(135deg,#8fc9bc,#bcd6a0,#e3c98a)",yt:""},
-  {q:"Q2",date:"2026",name:"박도윤",title:"오후 세 시",grad:"linear-gradient(135deg,#d98a8a,#caa0c0,#8a9bd9)",yt:""},
-  {q:"Q2",date:"2026",name:"한소이",title:"우리의 주말",grad:"linear-gradient(135deg,#6b7a99,#9a8fc9,#c9bc8f)",yt:""},
-];
+let Q = null;                                   // 지금 보고 있는 분기
+let EYEBROW_HTML = 'Quarter Diary';              // 되돌리기 때 복원할 문구
+
+/* 발표 롤 — loadRoll() 이 DB에서 채운다. 가짜 데모 데이터는 두지 않는다.
+   (예전엔 여기 예시 4명이 박혀 있어서, 사진이 없으면 낯선 이름이 발표에 떴다) */
+let FRAMES=[];
 
 /* 사진 렌더 헬퍼: 실제 업로드 사진(url) + 멤버가 맞춘 초점(pos) 반영 */
 function photoBG(f){ return f && f.url ? "url('"+String(f.url).replace(/['"\\]/g,'')+"')" : ((f&&f.grad)||'linear-gradient(135deg,#8fc9bc,#bcd6a0)'); }
@@ -481,7 +478,7 @@ resetBtn.addEventListener('click',()=>{
   eyebrow.classList.remove('fade-out');
   brandFoot.classList.remove('fade-out');
   document.body.classList.remove('aiming');
-  eyebrow.innerHTML='Quarter Diary · <b>2분기</b>';
+  eyebrow.innerHTML=EYEBROW_HTML;
   hint.classList.remove('fade-out');
   world.style.transition='opacity .6s ease, transform .6s ease';
   world.style.opacity='1'; world.style.transform='none';
@@ -784,60 +781,84 @@ if(location.hash==='#wall'){ setTimeout(jumpToWall,200); }
 addEventListener('hashchange',()=>{ if(location.hash==='#wall') jumpToWall(); });
 
 /* =========================================================================
-   Supabase 연결 — 업로드된 사진을 발표 롤(FRAMES)로 자동 변환
-   - hidden = true 인 항목은 제외(어드민에서 숨김 처리 대비)
-   - order_index 가 있으면 그 순서, 없으면 created_at 기준
-   - 발표 순서는 업로드 역순(PRESENT_REVERSE)
+   Supabase 연결 — 올라온 사진을 발표 롤(FRAMES)로 변환
+   - 주소에 ?y=2026&q=2 가 있으면 그 분기, 없으면 '지금 열린 분기'
+   - hidden = true 인 항목 제외 (관리자에서 숨김 처리)
+   - 같은 사람이 한 분기에 여러 번 올렸으면 가장 최근 1장만
+   - 발표 순서 = order_index 오름차순 (번호 없는 건 뒤로, 올린 순)
    ========================================================================= */
-let sb=null;
-function ensureSupabase(){
-  return new Promise((res,rej)=>{
-    if(sb) return res(sb);
-    if(!SHARED) return rej(new Error('no key'));
-    const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-    s.onload=()=>{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY); res(sb); };
-    s.onerror=()=>rej(new Error('supabase load fail'));
-    document.head.appendChild(s);
-  });
-}
 function mapRow(r){
-  return { q:"Q2", date:"2026",
+  return { q:'Q'+r.quarter, date:String(r.year),
     name:(r.name||'').trim(), title:(r.title||'').trim(),
     url:r.url||'', pos:r.pos||'center', yt:r.music||'' };
 }
+
+// 사진이 하나도 없을 때 — 가짜 데모 대신 사실대로 알린다
+function showEmpty(text){
+  FRAMES=[];
+  shutter.disabled=true;
+  shutter.style.opacity='.25';
+  shutter.style.pointerEvents='none';
+  frameTotal.textContent='00'; frameNo.textContent='00';
+  const n=document.createElement('div');
+  n.style.cssText='position:fixed;left:0;right:0;bottom:16%;z-index:60;text-align:center;'+
+    'font-size:13px;color:#9a938a;letter-spacing:.02em;line-height:1.7;padding:0 24px;';
+  n.innerHTML=text;
+  document.body.appendChild(n);
+}
+
 async function loadRoll(){
   try{
-    if(!SHARED) return; // 키 없으면 데모 유지
-    await ensureSupabase();
-    let { data, error } = await sb.from(TABLE).select('*').limit(200);
+    const sb = await QD.sb();
+    Q = await QD.resolveQuarter();
+    if(!Q){ showEmpty('아직 열린 분기가 없어요.<br>관리자 화면에서 분기를 열어주세요.'); return; }
+
+    // 분기 문구
+    document.title = Q.label + ' 쿼터다이어리 - 발표';
+    EYEBROW_HTML = 'Quarter Diary · <b>' + Q.label.replace(/^\d+년\s*/,'') + '</b>';
+    eyebrow.innerHTML = EYEBROW_HTML;
+    document.getElementById('wallTitleBig').textContent =
+      Q.year + ' · ' + Q.quarter + 'Q · QUARTER DIARY';
+
+    // 이 분기 사진만 읽는다. 이게 빠지면 지난 분기와 섞인다.
+    let { data, error } = await sb.from(TABLE).select('*')
+      .eq('year', Q.year).eq('quarter', Q.quarter).limit(200);
     if(error) throw error;
+
     data = (data||[]).filter(r=>!r.hidden);
-    // 정렬: order_index 우선, 없으면 created_at
+    if(!data.length){ showEmpty(Q.label + ' 사진이 아직 없어요.<br>업로드 화면에서 먼저 올려주세요.'); return; }
+
+    // 같은 사람이 여러 번 올렸으면 가장 최근 1장만 남긴다.
+    // (멤버 연결이 없는 옛 행은 이름으로, 이름도 없으면 각각 다른 사람으로 본다)
+    const newest=new Map();
+    data.forEach((r,i)=>{
+      const key = r.member_id || (r.name||'').trim() || ('__blank'+i);
+      const prev = newest.get(key);
+      if(!prev || new Date(r.created_at||0) > new Date(prev.created_at||0)) newest.set(key, r);
+    });
+    data=[...newest.values()];
+
+    // 발표 순서: order_index 작은 것부터. 번호가 없으면 뒤로 보내고 올린 순으로.
     data.sort((a,b)=>{
       const ao=a.order_index, bo=b.order_index;
-      if(ao!=null && bo!=null) return ao-bo;
-      const at=new Date(a.created_at||0).getTime(), bt=new Date(b.created_at||0).getTime();
-      return at-bt;
+      if(ao!=null && bo!=null && ao!==bo) return ao-bo;
+      if(ao!=null && bo==null) return -1;
+      if(ao==null && bo!=null) return 1;
+      return new Date(a.created_at||0) - new Date(b.created_at||0);
     });
-    // 같은 이름은 최신 1건만 (재제출 시 벽에 중복으로 걸리는 것 방지).
-    // 위 정렬이 오름차순이라 각 이름의 '마지막' 항목이 가장 최신이다.
-    // 이름이 빈 행은 서로 다른 사람일 수 있어 합치지 않음(고유 키 부여).
-    const lastByName=new Map();
-    const keyOf=(r,i)=>{ const n=(r.name||'').trim(); return n||('__blank'+i); };
-    data.forEach((r,i)=>lastByName.set(keyOf(r,i),i));
-    data=data.filter((r,i)=>i===lastByName.get(keyOf(r,i)));
-    if(PRESENT_REVERSE) data.reverse();
-    if(data.length){
-      FRAMES = data.map(mapRow);
-      frameTotal.textContent=String(FRAMES.length).padStart(2,'0');
-      frameNo.textContent='01';
-      // 첫 몇 장 사진 미리 로드(현상 시 빈 화면 방지)
-      FRAMES.slice(0,3).forEach(f=>{ if(f.url){ const im=new Image(); im.src=f.url; } });
-    }
-  }catch(e){ console.warn('롤 불러오기 실패 — 데모로 진행:', e); }
-  finally{ rollReady=true; shutter.disabled=false; }   // 로드(성공/실패/키없음) 후 셔터 해제
+
+    FRAMES = data.map(mapRow);
+    frameTotal.textContent=String(FRAMES.length).padStart(2,'0');
+    frameNo.textContent='01';
+    // 첫 몇 장 미리 받아둔다(현상할 때 빈 화면 방지)
+    FRAMES.slice(0,3).forEach(f=>{ if(f.url){ const im=new Image(); im.src=f.url; } });
+  }catch(e){
+    console.error('롤 불러오기 실패:', e);
+    showEmpty('사진을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침 해주세요.');
+  }
+  finally{ rollReady=true; if(FRAMES.length) shutter.disabled=false; }
 }
+QD.nav('wall', {compact:true});
 loadRoll();
 </script>
 </body>
