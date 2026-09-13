@@ -21,7 +21,9 @@ body{font-family:'NanumSquareNeo','Helvetica Neue',-apple-system,'Apple SD Gothi
   background:radial-gradient(120% 78% at 50% 0%, #15181b 0%, #0c0e10 60%);
   color:var(--ink);min-height:100dvh;
   padding:max(30px,env(safe-area-inset-top)) 22px calc(56px + env(safe-area-inset-bottom));
-  display:flex;justify-content:center;}
+  display:flex;justify-content:center;
+  /* 한글은 단어 중간에서 끊기지 않게, 긴 영문 주소만 필요할 때 끊는다 */
+  word-break:keep-all;overflow-wrap:anywhere;}
 .wrap{width:100%;max-width:760px;}
 
 .eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.4em;text-transform:uppercase;color:#a49c90;}
@@ -31,8 +33,9 @@ h1 em{display:block;font-style:normal;font-size:13px;font-weight:700;color:var(-
   letter-spacing:.02em;margin-bottom:9px;}
 .lead{font-size:13.5px;line-height:1.75;color:var(--ink-soft);margin-top:12px;}
 
-h2{font-size:11px;font-weight:800;letter-spacing:.26em;text-transform:uppercase;color:#a49c90;
-  margin:44px 0 16px;padding-bottom:10px;border-bottom:1px solid var(--line);}
+/* 섹션 제목 — 한글이라 자간을 벌리지 않는다(벌리면 '분 기 별'처럼 흩어져 보인다) */
+h2{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink);
+  margin:48px 0 16px;padding-bottom:11px;border-bottom:1px solid var(--line);}
 
 /* ---- 분기 카드 ---- */
 .qs{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px;}

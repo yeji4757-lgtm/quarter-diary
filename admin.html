@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>쿼터다이어리 - 관리자</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%230c0e10'/%3E%3Crect x='24' y='20' width='52' height='60' rx='4' fill='%23fefefe'/%3E%3Crect x='30' y='26' width='40' height='38' rx='2' fill='%238fc9bc'/%3E%3Ccircle cx='50' cy='45' r='9' fill='%230c0e10' opacity='.35'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquareNeo@1.0/nanumsquareneo.css" rel="stylesheet">
+<!-- 공통 코드. 고칠 때마다 ?v= 숫자를 올린다 — 안 올리면 브라우저가 옛 파일을 계속 쓴다 -->
+<script src="shared.js?v=2"></script>
+<style>
+:root{
+  --mint:#8fc9bc; --mint-ink:#2f8f78; --mint-soft:#bfe0d7;
+  --void:#0c0e10; --panel:#15181b; --line:#2a2e31;
+  --ink:#ece8e0; --ink-soft:#9a938a; --ink-faint:#6b6258;
+  --warn:#d98a8a;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;}
+body{font-family:'NanumSquareNeo','Helvetica Neue',-apple-system,'Apple SD Gothic Neo',sans-serif;
+  background:radial-gradient(120% 78% at 50% 0%, #15181b 0%, #0c0e10 60%);
+  color:var(--ink);min-height:100dvh;
+  padding:max(30px,env(safe-area-inset-top)) 22px calc(56px + env(safe-area-inset-bottom));
+  display:flex;justify-content:center;
+  /* 한글은 단어 중간('사/진')에서 끊기지 않게, 긴 영문 주소만 필요할 때 끊는다 */
+  word-break:keep-all;overflow-wrap:anywhere;}
+
+.eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.4em;text-transform:uppercase;color:#a49c90;}
+.eyebrow b{color:var(--mint);font-weight:800;}
+.hide{display:none !important;}
+.muted{color:var(--ink-faint);}
+
+/* ---------- 로그인 ---------- */
+#login{width:100%;max-width:380px;align-self:center;}
+#login h1{font-size:24px;font-weight:800;margin:16px 0 8px;letter-spacing:-.01em;}
+#login p{font-size:13px;color:var(--ink-soft);line-height:1.7;margin-bottom:26px;}
+.f{padding:15px 0 12px;border-bottom:1px solid var(--line);transition:border-color .2s;}
+.f:focus-within{border-color:var(--mint);}
+.f label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.01em;
+  color:var(--ink-soft);margin-bottom:7px;}
+.f .hint{font-weight:400;color:var(--ink-faint);font-size:11px;}
+.f input{width:100%;border:none;background:transparent;color:var(--ink);font-size:16px;
+  font-family:inherit;padding:0;color-scheme:dark;}
+.f input::-webkit-calendar-picker-indicator{filter:invert(.7);cursor:pointer;}
+.f input:focus{outline:none;}
+.btn{display:block;width:100%;margin-top:26px;padding:15px;border:none;border-radius:4px;
+  background:var(--mint);color:var(--void);font-family:inherit;font-size:14px;font-weight:800;
+  letter-spacing:.02em;cursor:pointer;transition:opacity .18s;}
+.btn:disabled{opacity:.35;cursor:default;}
+.btn.ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line);}
+.btn.ghost:hover{color:var(--ink);border-color:#3c4145;}
+.msg{font-size:12.5px;line-height:1.6;margin-top:16px;min-height:18px;}
+.msg.err{color:var(--warn);}
+.msg.ok{color:var(--mint);}
+
+/* ---------- 관리 화면 ---------- */
+#app{width:100%;max-width:1000px;display:grid;grid-template-columns:154px 1fr;gap:36px;
+  align-items:start;}
+.side{position:sticky;top:76px;}
+.side nav{display:flex;flex-direction:column;gap:2px;margin-top:18px;}
+.side nav button{text-align:left;font-family:inherit;font-size:13px;font-weight:700;
+  color:var(--ink-soft);background:transparent;border:none;border-left:2px solid transparent;
+  padding:9px 12px;cursor:pointer;transition:all .16s;}
+.side nav button:hover{color:var(--ink);background:rgba(255,255,255,.03);}
+.side nav button.on{color:var(--mint);border-left-color:var(--mint);}
+.who{font-size:11px;color:var(--ink-faint);margin-top:22px;line-height:1.7;word-break:break-all;}
+.who button{font-family:inherit;font-size:11px;font-weight:700;color:var(--ink-soft);
+  background:none;border:none;padding:0;margin-top:6px;cursor:pointer;text-decoration:underline;}
+
+section{margin-bottom:52px;scroll-margin-top:80px;}
+section h2{font-size:19px;font-weight:800;letter-spacing:-.01em;margin-bottom:6px;}
+section .sub{font-size:12.5px;color:var(--ink-faint);line-height:1.7;margin-bottom:20px;}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:15px 16px;margin-bottom:9px;}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.row .grow{flex:1;min-width:190px;}
+.nm{font-size:14.5px;font-weight:800;letter-spacing:-.01em;}
+.sm{font-size:11.5px;color:var(--ink-faint);margin-top:4px;letter-spacing:.01em;}
+.tag{font-size:10.5px;font-weight:700;letter-spacing:.01em;padding:4px 8px;border-radius:3px;
+  white-space:nowrap;}
+.tag.now{color:var(--void);background:var(--mint);}
+.tag.open{color:var(--mint);border:1px solid rgba(143,201,188,.4);}
+.tag.off{color:var(--ink-faint);border:1px solid var(--line);}
+.tag.hid{color:var(--warn);border:1px solid rgba(217,138,138,.4);}
+
+.mini{font-family:inherit;font-size:11.5px;font-weight:700;color:var(--ink-soft);
+  background:transparent;border:1px solid var(--line);border-radius:3px;padding:6px 10px;
+  cursor:pointer;transition:all .16s;white-space:nowrap;}
+.mini:hover{color:var(--ink);border-color:#3c4145;}
+.mini.acc{color:var(--void);background:var(--mint);border-color:var(--mint);}
+.mini.acc:hover{color:var(--void);opacity:.88;}
+.mini.link{border-color:transparent;color:var(--ink-faint);padding-left:4px;padding-right:4px;}
+.mini.link:hover{color:var(--mint);border-color:transparent;}
+.mini.dgr:hover{color:var(--warn);border-color:rgba(217,138,138,.5);}
+.mini:disabled{opacity:.3;cursor:default;}
+
+.thumb{width:40px;height:50px;border-radius:2px;background-size:cover;background-position:center;
+  background-color:#1d2124;flex:none;}
+
+/* 새 분기 만들기 폼 */
+.form{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;}
+.formTitle{font-size:13.5px;font-weight:800;letter-spacing:-.01em;margin-bottom:4px;}
+.formSub{font-size:11.5px;color:var(--ink-faint);line-height:1.6;margin-bottom:6px;}
+/* 시작/끝 시간처럼 한 쌍인 입력은 가로로 붙여 둔다 */
+.pair{display:flex;align-items:center;gap:10px;}
+.pair input{flex:1;min-width:0;}
+/* 시간 한 쌍은 두 칸을 차지해 '오후 10:00'이 잘리지 않게 한다. 좁은 화면에선 한 칸으로 */
+.f.wide{grid-column:span 2;}
+@media (max-width:720px){ .f.wide{grid-column:auto;} }
+.pair span{color:var(--ink-faint);font-size:12px;flex:none;}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0 18px;}
+.form .f{padding:12px 0 10px;}
+.form .btn{width:auto;padding:12px 24px;margin-top:20px;}
+
+select.pick{font-family:inherit;font-size:13px;font-weight:700;color:var(--ink);
+  background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:8px 10px;
+  margin-bottom:18px;cursor:pointer;}
+
+/* 제출 현황 */
+.fold{overflow:hidden;}
+.fold[hidden]{display:none;}
+.foldBtn{font-family:inherit;font-size:12.5px;font-weight:700;color:var(--ink-soft);
+  background:transparent;border:1px dashed var(--line);border-radius:6px;padding:13px;
+  width:100%;cursor:pointer;transition:all .16s;}
+.foldBtn:hover{color:var(--mint);border-color:rgba(143,201,188,.45);}
+
+.chk{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #1f2326;font-size:13.5px;}
+.chk .grow{flex:1;}                               /* '제출함/아직'을 오른쪽 끝으로 */
+.chk .st{font-size:11.5px;color:var(--ink-faint);}
+.chk .st.y{color:var(--mint);}
+.chk:last-child{border-bottom:none;}
+.dot{width:7px;height:7px;border-radius:50%;flex:none;}
+.dot.y{background:var(--mint);}
+.dot.n{background:#3a3f43;}
+
+@media (max-width:720px){
+  #app{grid-template-columns:1fr;gap:0;}
+  .side{position:static;margin-bottom:30px;}
+  .side nav{flex-direction:row;flex-wrap:wrap;gap:4px;}
+  .side nav button{border-left:none;border-bottom:2px solid transparent;padding:8px 11px;}
+  .side nav button.on{border-left-color:transparent;border-bottom-color:var(--mint);}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 로그인 ===== -->
+<form id="login">
+  <div class="eyebrow">Quarter Diary · <b>관리자</b></div>
+  <h1>관리자로 들어가기</h1>
+  <p>분기를 열고 닫거나, 발표 순서를 정할 때 쓰는 화면이에요.</p>
+  <div class="f">
+    <label>이메일</label>
+    <input type="email" id="email" autocomplete="username" required>
+  </div>
+  <div class="f">
+    <label>비밀번호</label>
+    <input type="password" id="pw" autocomplete="current-password" required>
+  </div>
+  <button type="submit" class="btn" id="loginBtn">들어가기</button>
+  <div class="msg" id="loginMsg"></div>
+</form>
+
+<!-- ===== 관리 화면 ===== -->
+<div id="app" class="hide">
+  <aside class="side">
+    <div class="eyebrow">Quarter&nbsp;Diary</div>
+    <nav>
+      <button data-go="secQuarters" class="on">분기</button>
+      <button data-go="secStatus">제출 현황</button>
+      <button data-go="secOrder">발표 순서</button>
+      <button data-go="secMembers">멤버</button>
+    </nav>
+    <div class="who">
+      <span id="whoEmail"></span>
+      <button type="button" id="signOut">로그아웃</button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- 분기 -->
+    <section id="secQuarters">
+      <h2>분기</h2>
+      <div class="sub">‘지금 분기’로 지정된 곳으로 업로드가 들어갑니다.<br>제출을 그만 받으려면 ‘업로드 닫기’를 누르세요.</div>
+      <div id="qList"></div>
+
+      <button type="button" class="foldBtn" id="nfOpen" style="margin-top:14px">+ 새 분기 만들기</button>
+      <div class="form fold" id="nfForm" hidden style="margin-top:14px">
+        <div class="formTitle">새 분기 만들기</div>
+        <div class="formSub">만들면 바로 ‘지금 분기’가 되고 업로드가 열립니다. 모임 정보는 나중에 채워도 돼요.</div>
+        <div class="grid2">
+          <div class="f"><label>연도</label><input type="number" id="nfYear" min="2020" max="2100" inputmode="numeric"></div>
+          <div class="f"><label>분기 <span class="hint">1~4</span></label><input type="number" id="nfQ" min="1" max="4" inputmode="numeric"></div>
+          <div class="f"><label>모임 날짜 <span class="hint">미정이면 비워두세요</span></label><input type="date" id="nfDate"></div>
+          <div class="f wide"><label>시간</label>
+            <div class="pair"><input type="time" id="nfStart" aria-label="시작 시간"><span>–</span><input type="time" id="nfEnd" aria-label="끝 시간"></div>
+          </div>
+          <div class="f"><label>줌 링크</label><input type="url" id="nfZoom" placeholder="https://zoom.us/j/…"></div>
+          <div class="f"><label>회의 ID <span class="hint">선택</span></label><input type="text" id="nfZid"></div>
+          <div class="f"><label>암호 <span class="hint">선택</span></label><input type="text" id="nfZpw"></div>
+        </div>
+        <div class="row" style="margin-top:20px">
+          <button type="button" class="btn" id="nfSave" style="margin:0">만들고 열기</button>
+          <button type="button" class="mini link" id="nfCancel">취소</button>
+        </div>
+        <div class="msg" id="nfMsg"></div>
+      </div>
+    </section>
+
+    <!-- 제출 현황 -->
+    <section id="secStatus">
+      <h2>제출 현황</h2>
+      <div class="sub">누가 아직 안 올렸는지 한눈에 봅니다. 여기서 고른 분기가 아래 ‘발표 순서’에도 같이 적용돼요.</div>
+      <select class="pick" id="statusPick"></select>
+      <div class="card" id="statusList"></div>
+    </section>
+
+    <!-- 발표 순서 -->
+    <section id="secOrder">
+      <h2>발표 순서</h2>
+      <div class="sub">여기 보이는 위에서 아래 순서가 곧 발표 순서입니다.<br>바꾼 뒤 ‘순서 저장’을 눌러야 반영돼요.</div>
+      <select class="pick" id="orderPick"></select>
+      <div id="orderList"></div>
+      <div class="row" style="margin-top:14px">
+        <button type="button" class="btn ghost" id="orderSave" style="width:auto;margin:0;padding:12px 22px">순서 저장</button>
+        <button type="button" class="mini" id="dedupe">중복 제출 정리</button>
+        <span class="msg" id="orderMsg" style="margin:0"></span>
+      </div>
+    </section>
+
+    <!-- 멤버 -->
+    <section id="secMembers">
+      <h2>멤버</h2>
+      <div class="sub">업로드 화면에서 고를 수 있는 이름 목록이에요.<br>나가신 분은 ‘숨기기’ — 지난 기록은 그대로 남습니다.</div>
+      <div id="mList"></div>
+      <div class="form" style="margin-top:16px">
+        <div class="row">
+          <div class="f grow" style="padding-top:0"><label>새 멤버 이름</label><input type="text" id="mNew" maxlength="20"></div>
+          <button type="button" class="mini acc" id="mAdd" style="padding:10px 16px">추가</button>
+        </div>
+        <div class="msg" id="mMsg"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* =========================================================================
+   관리자 화면
+   - Supabase 로그인(이메일+비밀번호)한 사람만 쓸 수 있다.
+     읽기는 누구나 되지만 수정·삭제는 Supabase 쪽 규칙(RLS)이 로그인 여부로 막는다.
+   - 분기 열고 닫기 / 제출 현황 / 발표 순서 / 멤버 관리
+   ========================================================================= */
+const TABLE="wall", BUCKET="photos";
+let sb=null, QUARTERS=[], MEMBERS=[], ROWS=[], ORDER=[];
+
+const $=id=>document.getElementById(id);
+const loginEl=$('login'), appEl=$('app');
+function say(el,t,k){ el.textContent=t; el.className='msg '+(k||''); }
+
+/* ---------- 로그인 ---------- */
+loginEl.addEventListener('submit',async e=>{
+  e.preventDefault();
+  $('loginBtn').disabled=true; say($('loginMsg'),'확인 중…','');
+  try{
+    sb=await QD.sb();
+    const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('pw').value});
+    if(error) throw error;
+    await enter();
+  }catch(err){
+    console.error(err);
+    const m=/Invalid login/i.test(err.message||'') ? '이메일이나 비밀번호가 맞지 않아요.' : (err.message||'들어가지 못했어요.');
+    say($('loginMsg'),m,'err'); $('loginBtn').disabled=false;
+  }
+});
+
+$('signOut').addEventListener('click',async()=>{
+  await sb.auth.signOut(); location.reload();
+});
+
+async function enter(){
+  const {data:{user}}=await sb.auth.getUser();
+  $('whoEmail').textContent=user?user.email:'';
+  loginEl.classList.add('hide');
+  appEl.classList.remove('hide');
+  document.body.style.alignItems='flex-start';
+  await loadAll();
+}
+
+/* ---------- 데이터 ---------- */
+async function loadAll(){
+  const [qs,ms,res]=await Promise.all([
+    sb.from('quarters').select('*').order('year',{ascending:false}).order('quarter',{ascending:false}),
+    sb.from('members').select('*').order('sort').order('name'),
+    sb.from(TABLE).select('*').limit(1000)
+  ]);
+  if(qs.error||ms.error||res.error) throw (qs.error||ms.error||res.error);
+  QUARTERS=qs.data||[]; MEMBERS=ms.data||[]; ROWS=res.data||[];
+  renderQuarters(); fillPicks(); renderMembers();
+}
+
+const qName=q=>q.label+' (Q'+q.quarter+')';
+const shotsOf=(y,q)=>ROWS.filter(r=>r.year===y&&r.quarter===q);
+const memberName=id=>{ const m=MEMBERS.find(x=>x.id===id); return m?m.name:null; };
+
+/* ---------- 분기 ---------- */
+// 실제 분기를 최신순으로, 시험용(quarter=9)은 맨 뒤로
+const isTest=q=>q.quarter===9;
+function sortedQuarters(){
+  return QUARTERS.slice().sort((a,b)=>
+    (isTest(a)-isTest(b)) || (b.year-a.year) || (b.quarter-a.quarter));
+}
+
+function renderQuarters(){
+  const box=$('qList'); box.innerHTML='';
+  if(!QUARTERS.length){ box.innerHTML='<div class="card muted">아직 분기가 없어요. 아래에서 만들어주세요.</div>'; return; }
+  sortedQuarters().forEach(q=>{
+    const n=shotsOf(q.year,q.quarter).length;
+    const d=document.createElement('div'); d.className='card';
+    if(isTest(q)) d.style.opacity='.6';
+    const meta=[QD.dateLabel(q)||'모임 날짜 미정', '사진 '+n+'장'];
+    if(QD.timeLabel(q)) meta.splice(1,0,QD.timeLabel(q));
+    d.innerHTML='<div class="row">'+
+      '<div class="grow"><div class="nm">'+q.label+(isTest(q)?' <span class="sm" style="font-weight:400">· 시험용</span>':'')+'</div>'+
+      '<div class="sm">'+meta.join(' · ')+'</div></div>'+
+      (q.is_current?'<span class="tag now">지금 분기</span>':'')+
+      '<span class="tag '+(q.upload_open?'open':'off')+'">'+(q.upload_open?'업로드 열림':'업로드 닫힘')+'</span>'+
+      '</div>';
+    const acts=document.createElement('div'); acts.className='row'; acts.style.cssText='margin-top:12px;gap:8px';
+    if(!q.is_current && !isTest(q)){
+      const b=document.createElement('button'); b.className='mini acc'; b.textContent='지금 분기로 지정';
+      b.onclick=()=>{ if(confirm(q.label+'를 지금 분기로 바꿀까요?\n업로드 화면이 이 분기로 바뀝니다.')) setCurrent(q); };
+      acts.appendChild(b);
+    }
+    const t=document.createElement('button'); t.className='mini';
+    t.textContent=q.upload_open?'업로드 닫기':'업로드 열기';
+    t.onclick=()=>patchQuarter(q,{upload_open:!q.upload_open}); acts.appendChild(t);
+
+    const v=document.createElement('a'); v.className='mini link'; v.style.textDecoration='none';
+    v.href='wall.html?y='+q.year+'&q='+q.quarter; v.target='_blank'; v.rel='noopener';
+    v.textContent='발표 화면 보기 ↗'; acts.appendChild(v);
+    d.appendChild(acts); box.appendChild(d);
+  });
+}
+
+async function patchQuarter(q,patch){
+  try{
+    const {error}=await sb.from('quarters').update(patch).eq('year',q.year).eq('quarter',q.quarter);
+    if(error) throw error;
+    await loadAll();
+  }catch(e){ alert('바꾸지 못했어요: '+(e.message||e)); }
+}
+
+// '지금 분기'는 하나뿐이어야 해서, 먼저 전부 끄고 나서 켠다
+async function setCurrent(q){
+  try{
+    let r=await sb.from('quarters').update({is_current:false}).eq('is_current',true);
+    if(r.error) throw r.error;
+    r=await sb.from('quarters').update({is_current:true}).eq('year',q.year).eq('quarter',q.quarter);
+    if(r.error) throw r.error;
+    await loadAll();
+  }catch(e){ alert('바꾸지 못했어요: '+(e.message||e)); }
+}
+
+// 가장 최근 실제 분기의 다음 분기를 미리 채워둔다 (2026 2분기 → 2026 3분기)
+function nextQuarter(){
+  const real=QUARTERS.filter(q=>!isTest(q)).sort((a,b)=>(b.year-a.year)||(b.quarter-a.quarter))[0];
+  if(!real){ const d=new Date(); return {year:d.getFullYear(), quarter:Math.floor(d.getMonth()/3)+1}; }
+  return real.quarter===4 ? {year:real.year+1, quarter:1} : {year:real.year, quarter:real.quarter+1};
+}
+function openNewQuarter(open){
+  $('nfForm').hidden=!open; $('nfOpen').hidden=open; say($('nfMsg'),'','');
+  if(open){
+    const n=nextQuarter();
+    if(!$('nfYear').value) $('nfYear').value=n.year;
+    if(!$('nfQ').value) $('nfQ').value=n.quarter;
+    if(!$('nfStart').value) $('nfStart').value='20:00';
+    if(!$('nfEnd').value) $('nfEnd').value='22:00';
+    $('nfDate').focus();
+  }
+}
+$('nfOpen').addEventListener('click',()=>openNewQuarter(true));
+$('nfCancel').addEventListener('click',()=>openNewQuarter(false));
+
+$('nfSave').addEventListener('click',async()=>{
+  const y=parseInt($('nfYear').value,10), qq=parseInt($('nfQ').value,10);
+  if(!y||!qq||qq<1||qq>4){ say($('nfMsg'),'연도와 분기(1~4)를 확인해주세요.','err'); return; }
+  if(QUARTERS.some(x=>x.year===y&&x.quarter===qq)){ say($('nfMsg'),'이미 있는 분기예요.','err'); return; }
+  if(!!$('nfStart').value !== !!$('nfEnd').value){ say($('nfMsg'),'시작과 끝 시간을 둘 다 적어주세요.','err'); return; }
+  const row={year:y,quarter:qq,label:y+'년 '+qq+'분기',
+    meeting_date:$('nfDate').value||null,
+    start_time:$('nfStart').value||null, end_time:$('nfEnd').value||null,
+    zoom_url:$('nfZoom').value.trim()||null, zoom_id:$('nfZid').value.trim()||null,
+    zoom_pw:$('nfZpw').value.trim()||null, upload_open:true, is_current:false};
+  say($('nfMsg'),'만드는 중…','');
+  try{
+    let r=await sb.from('quarters').insert(row); if(r.error) throw r.error;
+    await setCurrent({year:y,quarter:qq});
+    ['nfYear','nfQ','nfDate','nfStart','nfEnd','nfZoom','nfZid','nfZpw'].forEach(i=>$(i).value='');
+    openNewQuarter(false);
+    flash(row.label+'를 열었어요. 이제 멤버들이 업로드할 수 있어요.');
+  }catch(e){ say($('nfMsg'),'만들지 못했어요: '+(e.message||e),'err'); }
+});
+
+/* ---------- 분기 고르는 드롭다운 (제출 현황 / 발표 순서) ---------- */
+function fillPicks(){
+  const ids=['statusPick','orderPick'];
+  const cur=QUARTERS.find(q=>q.is_current)||sortedQuarters()[0];
+  const keep=$('statusPick').value;
+  ids.forEach(id=>{
+    const el=$(id); el.innerHTML='';
+    sortedQuarters().forEach(q=>{
+      const o=document.createElement('option');
+      o.value=q.year+'|'+q.quarter;
+      o.textContent=q.label+(q.is_current?' · 지금':'')+(isTest(q)?' · 시험용':'');
+      el.appendChild(o);
+    });
+  });
+  const val = keep && [...$('statusPick').options].some(o=>o.value===keep) ? keep
+            : (cur ? cur.year+'|'+cur.quarter : '');
+  // 제출 현황과 발표 순서는 늘 같은 분기를 본다 — 한쪽을 바꾸면 다른 쪽도 따라 바뀐다
+  ids.forEach(id=>{
+    $(id).value=val;
+    $(id).onchange=e=>{ ids.forEach(o=>$(o).value=e.target.value); renderStatus(); renderOrder(); };
+  });
+  renderStatus(); renderOrder();
+}
+function picked(id){
+  const v=$(id).value; if(!v) return null;
+  const [y,q]=v.split('|').map(Number);
+  return QUARTERS.find(x=>x.year===y&&x.quarter===q)||null;
+}
+
+/* ---------- 제출 현황 ---------- */
+function renderStatus(){
+  const q=picked('statusPick'); const box=$('statusList'); box.innerHTML='';
+  if(!q){ box.innerHTML='<div class="muted">분기를 골라주세요.</div>'; return; }
+  const shots=shotsOf(q.year,q.quarter);
+  const done=new Set(shots.map(s=>s.member_id).filter(Boolean));
+  const active=MEMBERS.filter(m=>m.active);
+  const yes=active.filter(m=>done.has(m.id)).length;
+  const head=document.createElement('div'); head.className='sm'; head.style.marginBottom='8px';
+  head.textContent=active.length+'명 중 '+yes+'명 제출 · '+(active.length-yes)+'명 대기';
+  box.appendChild(head);
+  active.forEach(m=>{
+    const ok=done.has(m.id);
+    const d=document.createElement('div'); d.className='chk';
+    d.innerHTML='<span class="dot '+(ok?'y':'n')+'"></span><span class="grow">'+m.name+'</span>'+
+      '<span class="st '+(ok?'y':'')+'">'+(ok?'제출함':'아직')+'</span>';
+    box.appendChild(d);
+  });
+  // 명단에 없는 이름으로 올라온 옛 기록
+  const strays=shots.filter(s=>!s.member_id);
+  if(strays.length){
+    const d=document.createElement('div'); d.className='sm'; d.style.marginTop='12px';
+    d.textContent='명단에 연결되지 않은 제출 '+strays.length+'건: '+strays.map(s=>s.name||'(이름없음)').join(', ');
+    box.appendChild(d);
+  }
+}
+
+/* ---------- 발표 순서 ---------- */
+function renderOrder(){
+  const q=picked('orderPick'); const box=$('orderList'); box.innerHTML='';
+  say($('orderMsg'),'','');
+  if(!q){ box.innerHTML='<div class="card muted">분기를 골라주세요.</div>'; return; }
+  ORDER=shotsOf(q.year,q.quarter).slice().sort((a,b)=>{
+    const ao=a.order_index,bo=b.order_index;
+    if(ao!=null&&bo!=null&&ao!==bo) return ao-bo;
+    if(ao!=null&&bo==null) return -1;
+    if(ao==null&&bo!=null) return 1;
+    return new Date(a.created_at||0)-new Date(b.created_at||0);
+  });
+  if(!ORDER.length){ box.innerHTML='<div class="card muted">아직 올라온 사진이 없어요.</div>'; return; }
+  drawOrder();
+}
+
+function drawOrder(){
+  const box=$('orderList'); box.innerHTML='';
+  ORDER.forEach((r,i)=>{
+    const d=document.createElement('div'); d.className='card';
+    const who=memberName(r.member_id)||r.name||'(이름없음)';
+    d.innerHTML='<div class="row">'+
+      '<span class="sm" style="margin:0;width:18px">'+(i+1)+'</span>'+
+      '<span class="thumb" style="background-image:'+(r.url?"url('"+String(r.url).replace(/['"\\]/g,'')+"')":'none')+'"></span>'+
+      '<div class="grow"><div class="nm">'+who+'</div><div class="sm">'+(r.title||'제목 없음')+'</div></div>'+
+      (r.hidden?'<span class="tag hid">숨김</span>':'')+
+      '</div>';
+    const acts=document.createElement('div'); acts.className='row'; acts.style.marginTop='10px';
+    const up=document.createElement('button'); up.className='mini'; up.textContent='↑'; up.disabled=i===0;
+    up.onclick=()=>{ [ORDER[i-1],ORDER[i]]=[ORDER[i],ORDER[i-1]]; drawOrder(); };
+    const dn=document.createElement('button'); dn.className='mini'; dn.textContent='↓'; dn.disabled=i===ORDER.length-1;
+    dn.onclick=()=>{ [ORDER[i+1],ORDER[i]]=[ORDER[i],ORDER[i+1]]; drawOrder(); };
+    const hd=document.createElement('button'); hd.className='mini'; hd.textContent=r.hidden?'다시 보이기':'발표에서 숨기기';
+    hd.onclick=()=>toggleHidden(r);
+    const dl=document.createElement('button'); dl.className='mini dgr'; dl.textContent='삭제';
+    dl.onclick=()=>removeShot(r);
+    acts.append(up,dn,hd,dl); d.appendChild(acts); box.appendChild(d);
+  });
+}
+
+$('orderSave').addEventListener('click',async()=>{
+  if(!ORDER.length) return;
+  say($('orderMsg'),'저장 중…','');
+  try{
+    for(let i=0;i<ORDER.length;i++){
+      const {error}=await sb.from(TABLE).update({order_index:i}).eq('id',ORDER[i].id);
+      if(error) throw error;
+    }
+    await loadAll(); say($('orderMsg'),'',''); flash('발표 순서를 저장했어요.');
+  }catch(e){ say($('orderMsg'),'저장하지 못했어요: '+(e.message||e),'err'); }
+});
+
+async function toggleHidden(r){
+  try{
+    const {error}=await sb.from(TABLE).update({hidden:!r.hidden}).eq('id',r.id);
+    if(error) throw error;
+    await loadAll();
+  }catch(e){ alert('바꾸지 못했어요: '+(e.message||e)); }
+}
+
+// 사진 파일까지 지운다. 파일 삭제 권한이 없으면 행만 지우고 알려준다.
+async function removeShot(r){
+  const who=memberName(r.member_id)||r.name||'(이름없음)';
+  if(!confirm(who+' 님의 “'+(r.title||'제목 없음')+'”을 지울까요?\n되돌릴 수 없어요.')) return;
+  try{
+    const {error}=await sb.from(TABLE).delete().eq('id',r.id);
+    if(error) throw error;
+    const warn=await removeFile(r.url);
+    await loadAll();
+    if(warn) alert('기록은 지웠지만 사진 파일은 남았어요.\n(사진 파일 삭제 권한이 아직 없습니다 — 3단계 SQL 참고)');
+  }catch(e){ alert('지우지 못했어요: '+(e.message||e)); }
+}
+
+async function removeFile(url){
+  const path=(url||'').split('/'+BUCKET+'/')[1];
+  if(!path) return false;
+  const {error}=await sb.storage.from(BUCKET).remove([decodeURIComponent(path)]);
+  return !!error;
+}
+
+// 같은 사람이 한 분기에 여러 번 올린 경우, 가장 최근 것만 남기고 정리
+$('dedupe').addEventListener('click',async()=>{
+  const q=picked('orderPick'); if(!q) return;
+  const shots=shotsOf(q.year,q.quarter);
+  const byWho=new Map();
+  shots.forEach((r,i)=>{
+    const k=r.member_id||(r.name||'').trim()||('__b'+i);
+    if(!byWho.has(k)) byWho.set(k,[]);
+    byWho.get(k).push(r);
+  });
+  const olds=[];
+  byWho.forEach(list=>{
+    if(list.length<2) return;
+    list.sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+    olds.push(...list.slice(1));
+  });
+  if(!olds.length){ say($('orderMsg'),'정리할 중복이 없어요.','ok'); return; }
+  if(!confirm('중복 제출 '+olds.length+'건을 지울까요?\n각자 가장 최근 1장만 남습니다. 되돌릴 수 없어요.')) return;
+  say($('orderMsg'),'정리 중…','');
+  try{
+    for(const r of olds){
+      const {error}=await sb.from(TABLE).delete().eq('id',r.id);
+      if(error) throw error;
+      await removeFile(r.url);
+    }
+    await loadAll(); say($('orderMsg'),olds.length+'건을 정리했어요.','ok');
+  }catch(e){ say($('orderMsg'),'정리하지 못했어요: '+(e.message||e),'err'); }
+});
+
+/* ---------- 멤버 ---------- */
+function renderMembers(){
+  const box=$('mList'); box.innerHTML='';
+  MEMBERS.forEach(m=>{
+    const n=ROWS.filter(r=>r.member_id===m.id).length;
+    const d=document.createElement('div'); d.className='card';
+    d.innerHTML='<div class="row"><div class="grow"><div class="nm">'+m.name+'</div>'+
+      '<div class="sm">남긴 사진 '+n+'장</div></div>'+
+      (m.active?'':'<span class="tag off">숨김</span>')+'</div>';
+    const acts=document.createElement('div'); acts.className='row'; acts.style.marginTop='10px';
+    const re=document.createElement('button'); re.className='mini'; re.textContent='이름 바꾸기';
+    re.onclick=()=>renameMember(m);
+    const tg=document.createElement('button'); tg.className='mini';
+    tg.textContent=m.active?'숨기기':'다시 보이기';
+    tg.onclick=()=>patchMember(m,{active:!m.active});
+    acts.append(re,tg); d.appendChild(acts); box.appendChild(d);
+  });
+}
+
+async function patchMember(m,patch){
+  try{
+    const {error}=await sb.from('members').update(patch).eq('id',m.id);
+    if(error) throw error;
+    await loadAll();
+  }catch(e){ alert('바꾸지 못했어요: '+(e.message||e)); }
+}
+
+function renameMember(m){
+  const v=prompt('새 이름을 적어주세요.', m.name);
+  if(v===null) return;
+  const name=v.trim(); if(!name||name===m.name) return;
+  patchMember(m,{name});
+}
+
+$('mAdd').addEventListener('click',async()=>{
+  const name=$('mNew').value.trim();
+  if(!name){ say($('mMsg'),'이름을 적어주세요.','err'); return; }
+  if(MEMBERS.some(m=>m.name===name)){ say($('mMsg'),'이미 있는 이름이에요.','err'); return; }
+  try{
+    const sort=MEMBERS.length?Math.max(...MEMBERS.map(m=>m.sort||0))+1:0;
+    const {error}=await sb.from('members').insert({name,sort});
+    if(error) throw error;
+    $('mNew').value=''; say($('mMsg'),'',''); flash(name+' 님을 추가했어요.');
+    await loadAll();
+  }catch(e){ say($('mMsg'),'추가하지 못했어요: '+(e.message||e),'err'); }
+});
+
+/* ---------- 하단 알림 (저장했어요 등) ---------- */
+function flash(text){
+  let t=document.getElementById('toast');
+  if(!t){
+    t=document.createElement('div'); t.id='toast'; t.setAttribute('role','status');
+    t.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);'+
+      'background:#1d2124;border:1px solid rgba(143,201,188,.45);color:var(--ink);font-size:13px;'+
+      'font-weight:700;padding:12px 18px;border-radius:6px;opacity:0;transition:all .25s;z-index:9500;'+
+      'box-shadow:0 8px 30px rgba(0,0,0,.4);max-width:calc(100vw - 40px);text-align:center;';
+    document.body.appendChild(t);
+  }
+  t.textContent=text;
+  requestAnimationFrame(()=>{ t.style.opacity='1'; t.style.transform='translateX(-50%) translateY(0)'; });
+  clearTimeout(flash._h);
+  flash._h=setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(20px)'; },2600);
+}
+
+/* ---------- 왼쪽 메뉴 ---------- */
+const navBtns=[...document.querySelectorAll('.side nav button')];
+function markNav(id){ navBtns.forEach(x=>x.classList.toggle('on', x.dataset.go===id)); }
+navBtns.forEach(b=>{
+  b.onclick=()=>{ markNav(b.dataset.go); $(b.dataset.go).scrollIntoView({behavior:'smooth',block:'start'}); };
+});
+// 스크롤하면 지금 보고 있는 섹션에 메뉴 표시가 따라온다
+const spy=new IntersectionObserver(entries=>{
+  const vis=entries.filter(e=>e.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top)[0];
+  if(vis) markNav(vis.target.id);
+},{rootMargin:'-80px 0px -60% 0px'});
+['secQuarters','secStatus','secOrder','secMembers'].forEach(id=>spy.observe($(id)));
+
+/* ---------- 시작: 이미 로그인돼 있으면 바로 들어간다 ---------- */
+(async function(){
+  QD.nav('admin');
+  document.body.style.alignItems='center';
+  try{
+    sb=await QD.sb();
+    const {data}=await sb.auth.getSession();
+    if(data&&data.session) await enter();
+  }catch(e){ console.error(e); say($('loginMsg'),'연결하지 못했어요. 새로고침 해주세요.','err'); }
+})();
+</script>
+</body>
+</html>
