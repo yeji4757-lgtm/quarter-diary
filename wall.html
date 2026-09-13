@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquareNeo@1.0/nanumsquareneo.css" rel="stylesheet">
 <!-- 공통 코드. 고칠 때마다 ?v= 숫자를 올린다 — 안 올리면 브라우저가 옛 파일을 계속 쓴다 -->
-<script src="shared.js?v=2"></script>
+<script src="shared.js?v=3"></script>
 <style>
 :root{
   --mint:#8fc9bc; --mint-ink:#2f8f78;
@@ -517,6 +517,14 @@ window.onYouTubeIframeAPIReady=function(){
           const t=ytPlayer.getVideoData&&ytPlayer.getVideoData().title;
           nowPlaying.textContent=t?('🎵 '+t):'🎵 재생 중';}
         else if(e.data===YT.PlayerState.PAUSED||e.data===YT.PlayerState.ENDED){ytPlaying=false;setMusicUI(false);}
+      },
+      // 성인 인증·퍼가기 금지 곡은 유튜브가 오류(101/150)를 주고 재생을 막는다.
+      // 예전엔 이 처리가 없어서 '불러오는 중…'에서 멈춰 있었다 → 유튜브에서 듣도록 안내한다.
+      onError:(e)=>{
+        ytPlaying=false;
+        try{ ytPlayer.stopVideo(); }catch(_){}
+        if(currentVid && (e.data===101||e.data===150||e.data===100)){ blockedVids.add(currentVid); showBlocked(); }
+        else{ setMusicUI(false); nowPlaying.textContent='이 곡은 재생할 수 없어요'; }
       }
     }
   });
@@ -533,12 +541,20 @@ function setMusicUI(playing){
   musicIco.textContent = playing ? '❚❚' : '▶';
   musicLabel.textContent = playing ? '일시정지' : '음악 재생';
 }
+// 여기서 재생이 막힌 곡 — 버튼을 '유튜브에서 듣기'로 바꿔 새 창으로 연다
+const blockedVids=new Set();
+function showBlocked(){
+  musicIco.textContent='↗';
+  musicLabel.textContent='유튜브에서 듣기';
+  nowPlaying.textContent='이 곡은 유튜브에서만 들을 수 있어요';
+}
 // fetch the linked YouTube's real title (oEmbed, no API key) and show it by the 🎵
 const ytTitleCache={};
 let ytTitleReq=0;
 function showTrackTitle(link, vid){
   nowPlaying.textContent='🎵';
   if(!link) return;
+  if(blockedVids.has(vid)){ showBlocked(); return; }
   const my=++ytTitleReq;
   if(ytTitleCache[vid]!==undefined){ nowPlaying.textContent='🎵 '+ytTitleCache[vid]; return; }
   const url='https://www.youtube.com/oembed?format=json&url='+encodeURIComponent('https://www.youtube.com/watch?v='+vid);
@@ -758,6 +774,7 @@ addEventListener('resize',()=>{
 });
 musicBtn.addEventListener('click',()=>{
   if(!currentVid) return;
+  if(blockedVids.has(currentVid)){ window.open(QD.watchUrl(currentVid),'_blank','noopener'); return; }
   if(!ytReady||!ytPlayer){ nowPlaying.textContent='플레이어 준비 중…'; return; }
   if(ytPlaying){ ytPlayer.pauseVideo(); return; }
   // load (or resume) the current video
@@ -808,11 +825,30 @@ function showEmpty(text){
   document.body.appendChild(n);
 }
 
+// 관리자가 공개 전 분기를 미리 볼 때 화면 위에 작게 표시
+function showPreviewBadge(){
+  const b=document.createElement('div');
+  b.textContent='관리자 미리보기 · 아직 멤버에게 공개 전';
+  b.style.cssText='position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:70;'+
+    'font-size:11.5px;font-weight:700;color:#0c0e10;background:#8fc9bc;padding:6px 12px;border-radius:999px;';
+  document.body.appendChild(b);
+}
+
 async function loadRoll(){
   try{
     const sb = await QD.sb();
     Q = await QD.resolveQuarter();
     if(!Q){ showEmpty('아직 열린 분기가 없어요.<br>관리자 화면에서 분기를 열어주세요.'); return; }
+
+    // 발표 공개 전: 관리자만 미리 볼 수 있다 (사진 데이터도 DB 규칙이 공개 전엔 내주지 않는다)
+    if(!Q.wall_open){
+      const { data:ses } = await sb.auth.getSession();
+      if(!(ses && ses.session)){
+        showEmpty(Q.label + ' 발표는 아직 공개 전이에요.<br>공개되면 이 주소에서 볼 수 있어요.');
+        return;
+      }
+      showPreviewBadge();
+    }
 
     // 분기 문구
     document.title = Q.label + ' 쿼터다이어리 - 발표';

@@ -7,6 +7,7 @@
  *  - 멤버 명단을 members 테이블에서 읽는다
  *  - 화면 상단 이동 바(업로드·발표·보관함·관리자)를 그린다
  *  - 모임 일정을 구글 캘린더 링크·표시 문구로 바꿔준다
+ *  - 유튜브 곡이 다른 사이트 플레이어에서 재생되는지 미리 확인한다
  *
  * 쓰는 법: 각 HTML 의 <head> 에서  <script src="shared.js"></script>  한 줄.
  * 그러면 window.QD 로 아래 함수들을 쓸 수 있다.
@@ -133,6 +134,70 @@ window.QD = (function () {
     return "https://calendar.google.com/calendar/render?" + params.toString();
   }
 
+  /* ---------- 유튜브 ---------- */
+  // 공유 링크·주소창 링크·영상 ID 어느 것이든 11자리 영상 ID로
+  function parseVid(link) {
+    if (!link) return null;
+    link = String(link).trim();
+    if (/^[\w-]{11}$/.test(link)) return link;
+    const m = link.match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([\w-]{11})/);
+    return m ? m[1] : null;
+  }
+  function watchUrl(vid) { return "https://www.youtube.com/watch?v=" + vid; }
+
+  let ytApi = null;
+  function loadYT() {
+    if (ytApi) return ytApi;
+    ytApi = new Promise(resolve => {
+      if (window.YT && window.YT.Player) return resolve(window.YT);
+      // 발표 화면처럼 자기 onYouTubeIframeAPIReady 를 가진 페이지와 충돌하지 않게 이어 붙인다
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = function () {
+        if (typeof prev === "function") prev();
+        resolve(window.YT);
+      };
+      const t = document.createElement("script");
+      t.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(t);
+    });
+    return ytApi;
+  }
+
+  // 이 곡이 우리 사이트(퍼간 플레이어)에서 재생되는지 확인한다.
+  // 유튜브는 성인 인증·퍼가기 금지 영상을 다른 사이트에서 재생하지 않고 오류 150/101 을 준다.
+  // 결과: 'ok' | 'blocked'(성인 인증·퍼가기 금지) | 'missing'(비공개·삭제) | 'invalid'(잘못된 ID) | 'unknown'
+  const playCache = {};
+  function checkPlayable(vid) {
+    if (!vid) return Promise.resolve("invalid");
+    if (playCache[vid]) return playCache[vid];
+    playCache[vid] = loadYT().then(YT => new Promise(resolve => {
+      const host = document.createElement("div");
+      host.id = "qdyt_" + vid + "_" + Math.random().toString(36).slice(2, 7);
+      host.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;";
+      document.body.appendChild(host);
+      let player = null, done = false;
+      const finish = result => {
+        if (done) return; done = true; clearTimeout(limit);
+        try { player && player.destroy(); } catch (_) {}
+        const el = document.getElementById(host.id); if (el) el.remove();
+        resolve(result);
+      };
+      // 오류 없이 이만큼 지나면 재생 가능한 것으로 본다 (막힌 곡은 1~2초 안에 오류가 온다)
+      const limit = setTimeout(() => finish("ok"), 7000);
+      player = new YT.Player(host.id, {
+        height: "1", width: "1", videoId: vid,
+        playerVars: { autoplay: 1, mute: 1, playsinline: 1, controls: 0 },
+        events: {
+          onReady: () => setTimeout(() => finish("ok"), 3500),
+          onStateChange: e => { if (e.data === 1) finish("ok"); },
+          onError: e => finish(e.data === 2 ? "invalid" : e.data === 100 ? "missing"
+                              : (e.data === 101 || e.data === 150) ? "blocked" : "unknown"),
+        },
+      });
+    }));
+    return playCache[vid];
+  }
+
   /* ---------- 상단 이동 바 ---------- */
   // nav("wall")  → 일반 바.  nav("wall", {compact:true}) → 발표 화면용 작은 버튼(펼치면 링크).
   // "관리자" 링크는 로그인돼 있을 때만 보인다 (관리자 화면 자체에서는 항상).
@@ -214,6 +279,7 @@ window.QD = (function () {
     sb, PAGES,
     quarterFromUrl, currentQuarter, getQuarter, resolveQuarter, listQuarters,
     listMembers,
+    parseVid, watchUrl, checkPlayable,
     dateLabel, timeLabel, calendarLink,
     nav,
   };

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquareNeo@1.0/nanumsquareneo.css" rel="stylesheet">
 <!-- 공통 코드. 고칠 때마다 ?v= 숫자를 올린다 — 안 올리면 브라우저가 옛 파일을 계속 쓴다 -->
-<script src="shared.js?v=2"></script>
+<script src="shared.js?v=3"></script>
 <style>
 :root{
   --mint:#8fc9bc; --mint-ink:#2f8f78; --mint-soft:#bfe0d7;
@@ -61,6 +61,11 @@ h1 span{color:var(--mint);}
   font-size:16px;font-family:inherit;font-weight:400;padding:0;letter-spacing:.01em;}
 .field input::placeholder{color:#4f4a41;}
 .field input:focus,.field select:focus{outline:none;}
+/* 음악 링크 아래 안내 — 발표에서 재생 안 되는 곡을 올리기 전에 알려준다 */
+.musicNote{font-size:12px;line-height:1.65;margin-top:9px;color:var(--ink-faint);word-break:keep-all;}
+.musicNote:empty{display:none;}
+.musicNote.ok{color:var(--mint);}
+.musicNote.warn{color:#e3a58f;}
 /* 이름 고르기 — 기본 select 화살표를 민트색 꺾쇠로 교체 */
 .field select{appearance:none;-webkit-appearance:none;cursor:pointer;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238fc9bc' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -178,6 +183,7 @@ input[type=file]{display:none;}
     <div class="field">
       <label>음악 링크</label>
       <input type="url" id="inMusic" placeholder="유튜브 링크를 복사한 뒤 붙여넣기 해주세요." autocomplete="off" inputmode="url">
+      <div class="musicNote" id="musicNote" aria-live="polite"></div>
     </div>
   </div>
 
@@ -347,6 +353,9 @@ document.getElementById('form').addEventListener('submit',async e=>{
   if(submit.disabled) return;
   submit.disabled=true; showMsg('확인 중…','ok');
   if(!Q){ showMsg('분기 정보를 불러오지 못했어요. 새로고침 해주세요.','err'); submit.disabled=false; return; }
+  if(MUSIC.state==='blocked' && !confirm('이 곡은 발표 화면에서 재생되지 않아요.\n그래도 이 링크로 올릴까요?')){
+    submit.disabled=false; showMsg('',''); inMusic.focus(); return;
+  }
   const member = MEMBERS.find(m=>m.id===inName.value);
   if(!member){ showMsg('이름을 골라주세요.','err'); submit.disabled=false; return; }
   try{
@@ -403,12 +412,46 @@ function resetToForm(){
   preview.style.backgroundImage=''; preview.textContent='+'; drop.classList.remove('has'); cap.textContent='클릭해서 사진을 추가해주세요.';
   crop.classList.remove('on'); cropImg.style.backgroundImage=''; posX=50; posY=50;
   inName.value=''; inTitle.value=''; inMusic.value=''; file.value=''; countEl.textContent='0 / 30';
+  MUSIC={vid:null,state:null}; setMusicNote('','');
   submit.disabled=false; validate(); showMsg('','');
 }
 document.getElementById('againBtn').addEventListener('click',()=>{
   alert('여러 번 제출하시면, 가장 최신에 제출된 쿼터 다이어리가 저장됩니다.');
   resetToForm();
 });
+
+/* ---- 음악 링크 확인 ----
+   유튜브는 성인 인증·퍼가기 금지 영상을 다른 사이트 플레이어에서 재생하지 않는다.
+   (2026년 2분기 발표에서 한 곡이 안 나온 이유) 올리기 전에 알려서 다른 버전을 고를 수 있게 한다. */
+let MUSIC={vid:null,state:null};
+const musicNote=document.getElementById('musicNote');
+function setMusicNote(text,kind){ musicNote.textContent=text; musicNote.className='musicNote'+(kind?' '+kind:''); }
+let musicTimer=null, musicReq=0;
+function checkMusic(){
+  const link=inMusic.value.trim();
+  if(!link){ MUSIC={vid:null,state:null}; setMusicNote('',''); return; }
+  const vid=QD.parseVid(link);
+  if(!vid){
+    MUSIC={vid:null,state:'invalid'};
+    setMusicNote('유튜브 링크가 아닌 것 같아요. 유튜브에서 ‘공유 → 링크 복사’한 주소를 붙여넣어 주세요.','warn');
+    return;
+  }
+  if(MUSIC.vid===vid && MUSIC.state && MUSIC.state!=='checking') return;
+  const my=++musicReq;
+  MUSIC={vid,state:'checking'};
+  setMusicNote('발표 화면에서 재생되는 곡인지 확인하는 중…','');
+  QD.checkPlayable(vid).then(st=>{
+    if(my!==musicReq) return;               // 그 사이 링크를 바꿨으면 옛 결과는 버린다
+    MUSIC={vid,state:st};
+    if(st==='blocked') setMusicNote('이 곡은 유튜브 성인 인증(또는 퍼가기 금지)이 걸려 있어 발표 화면에서 재생되지 않아요. 가사 영상이나 다른 버전 링크로 바꿔주세요.','warn');
+    else if(st==='missing') setMusicNote('영상을 찾을 수 없어요. 비공개이거나 삭제된 영상이에요.','warn');
+    else if(st==='invalid') setMusicNote('유튜브 링크가 올바르지 않아요. 다시 복사해서 붙여넣어 주세요.','warn');
+    else if(st==='ok') setMusicNote('발표 화면에서 재생되는 곡이에요.','ok');
+    else setMusicNote('','');
+  });
+}
+inMusic.addEventListener('input',()=>{ clearTimeout(musicTimer); musicTimer=setTimeout(checkMusic,700); });
+inMusic.addEventListener('change',checkMusic);
 
 /* ---- 시작: 분기 정보와 멤버 명단을 먼저 불러온다 ---- */
 const qBadge=document.getElementById('qBadge');
@@ -425,7 +468,7 @@ function lockForm(text){
 }
 
 async function start(){
-  QD.nav('upload');
+  // 멤버가 쓰는 화면이라 이동 바(발표·보관함)를 두지 않는다. 발표는 관리자가 공개할 때만 연다.
   try{
     Q = await QD.currentQuarter();
   }catch(e){

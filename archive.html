@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquareNeo@1.0/nanumsquareneo.css" rel="stylesheet">
 <!-- 공통 코드. 고칠 때마다 ?v= 숫자를 올린다 — 안 올리면 브라우저가 옛 파일을 계속 쓴다 -->
-<script src="shared.js?v=2"></script>
+<script src="shared.js?v=3"></script>
 <style>
 :root{
   --mint:#8fc9bc; --mint-ink:#2f8f78; --mint-soft:#bfe0d7;
@@ -111,6 +111,7 @@ const TABLE = "wall";
 let ROWS = [];      // 전체 사진 (숨김 제외, 분기별 최신 1장으로 추린 것)
 let QUARTERS = [];
 let MEMBERS = [];
+let IS_ADMIN = false;   // 관리자로 로그인했으면 공개 전 분기도 보여준다
 
 const elQuarters = document.getElementById('quarters');
 const elChips    = document.getElementById('chips');
@@ -137,7 +138,7 @@ function thumb(url){ return url ? "url('" + String(url).replace(/['"\\]/g,'') + 
 function renderQuarters(){
   elQuarters.innerHTML = '';
   if(!QUARTERS.length){
-    elQuarters.innerHTML = '<div class="note">아직 만들어진 분기가 없어요.</div>';
+    elQuarters.innerHTML = '<div class="note">아직 공개된 분기가 없어요.</div>';
     return;
   }
   QUARTERS.forEach(q=>{
@@ -155,7 +156,8 @@ function renderQuarters(){
       '<div class="qh"><span class="qn">' + q.label + '</span>' +
       '<span class="qb">Q' + q.quarter + '</span></div>' +
       '<div class="qm">' + (shots.length ? shots.length + '명이 남겼어요' : '아직 사진이 없어요') +
-        (q.upload_open ? ' · 제출 받는 중' : '') + '</div>' +
+        (q.upload_open ? ' · 제출 받는 중' : '') +
+        (q.wall_open ? '' : ' · 비공개 — 관리자에게만 보여요') + '</div>' +
       (shots.length ? '<div class="strip">' + strip + more + '</div>' : '') +
       '<div class="go">' + (shots.length ? '발표 다시보기 →' : '준비 중') + '</div>';
     elQuarters.appendChild(a);
@@ -217,7 +219,10 @@ async function start(){
       sb.from(TABLE).select('*').neq('quarter', 9).limit(500)
     ]);
     if(res.error) throw res.error;
-    QUARTERS = qs;
+    const { data: ses } = await sb.auth.getSession();
+    IS_ADMIN = !!(ses && ses.session);
+    // 발표를 공개한 분기만 보여준다 (사진 자체도 DB 규칙이 공개 전엔 내주지 않는다)
+    QUARTERS = IS_ADMIN ? qs : qs.filter(q => q.wall_open);
     MEMBERS  = ms;
     ROWS     = newestPerMemberPerQuarter((res.data||[]).filter(r=>!r.hidden));
 
