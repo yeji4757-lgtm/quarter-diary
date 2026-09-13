@@ -280,11 +280,15 @@ body.cine #shutter::after{animation:none;opacity:0;}
 /* PC: 프레임 바깥 우측 상단, 배경 없이 × 만 */
 /* 닫기(×): 카드 우상단 위 여백에 붙여 항상 어두운 배경 위에 뜨게(프레임에 안 가림).
    옅은 회색으로 은은하게, 터치 영역 넉넉히. PC·모바일 동일. */
-.modal-close{position:absolute;top:-40px;right:-4px;z-index:3;width:40px;height:40px;
-  border:none;cursor:pointer;background:transparent;color:rgba(232,228,220,.42);
-  font-size:27px;font-weight:200;line-height:1;padding:0;
-  display:flex;align-items:center;justify-content:center;
+/* 닫기(×)는 글자 대신 선 두 개로 그린다. 글자 '×'는 글꼴마다 좌우 여백이 달라, 사진 오른쪽 끝선보다 10px 안쪽에 떠 보였다.
+   크기·굵기는 예전 글자(잉크 약 12px, 선 2px 남짓)와 같게. 누르는 칸은 40px 그대로 두고,
+   그림(12px)의 오른쪽 끝이 사진 끝선과 딱 맞게 오른쪽으로 14px 내민다 ((40-12)/2) */
+.modal-close{position:absolute;top:-41px;right:-14px;z-index:3;width:40px;height:40px;
+  border:none;cursor:pointer;background:transparent;color:rgba(232,228,220,.42);padding:0;
   -webkit-tap-highlight-color:transparent;transition:color .2s ease;}
+.modal-close::before,.modal-close::after{content:"";position:absolute;left:50%;top:50%;width:14.8px;height:2.2px;
+  margin:-1.1px 0 0 -7.4px;border-radius:1px;background:currentColor;transform:rotate(45deg);}
+.modal-close::after{transform:rotate(-45deg);}
 .modal-close:hover{color:rgba(232,228,220,.85);}
 .modal-close:active{transform:scale(.92);}
 /* hidden YouTube audio host */
@@ -399,7 +403,7 @@ body.cine .eyebrow, body.cine .counter, body.cine .qd-nav, body.popup .qd-nav{op
 
 <div id="modal">
   <div class="modal-card">
-    <button class="modal-close" id="modalClose" aria-label="닫기">×</button>
+    <button class="modal-close" id="modalClose" aria-label="닫기"></button>
     <div class="modal-photo">
       <div class="img"><div class="photo" id="modalPhoto"></div></div>
       <div class="cap"><div class="q" id="modalQ"></div></div>
