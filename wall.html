@@ -854,7 +854,7 @@ function renderRoll(movedId){
     }else if(cur){
       b.title=(f.no||i+1)+'번, 지금 차례'; b.setAttribute('aria-label',(f.no||i+1)+'번, 지금 차례'); b.disabled=true;
     }else{
-      b.title=(f.no||i+1)+'번 먼저 찍기'; b.setAttribute('aria-label',(f.no||i+1)+'번 먼저 찍기');
+      b.title=(f.no||i+1)+'번 사진 먼저 보기'; b.setAttribute('aria-label',(f.no||i+1)+'번 사진 먼저 보기');
       b.onclick=()=>jumpTo(i);
     }
     roll.appendChild(b);
@@ -869,8 +869,8 @@ function jumpTo(pos){
   if(busy || modal.classList.contains('open') || pos<=idx || pos>=FRAMES.length) return;
   const [f]=FRAMES.splice(pos,1);
   FRAMES.splice(idx,0,f);
-  saveRoll(); renderRoll(f.id);
-  rollToast((f.no||pos+1)+'번을 먼저 찍어요');
+  saveRoll(); renderRoll(f.id);   // 옮겨온 칸이 튀어 오른다
+  rollToast((f.no||pos+1)+'번 사진을 먼저 볼까요?');
 }
 let rollToastTimer=null;
 function rollToast(text){
