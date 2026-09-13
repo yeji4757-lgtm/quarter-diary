@@ -467,7 +467,13 @@ function ejectPrint(){
     if(reduce){ print.style.transform='translateY(0)'; detach(print,f); return; }
     print.classList.add('ejecting');
   });
-  print.addEventListener('animationend',()=>detach(print,f),{once:true});
+  // 필름이 다 나오면 팝업으로 넘어간다. 그런데 탭·창이 화면에 안 보이는 동안(줌 화면공유 창을 고르러
+  // 다른 창에 갔을 때 등)은 브라우저가 애니메이션을 멈춰 animationend 가 오지 않고, 셔터가 영영 잠겼다.
+  // → 시간이 지나면 신호 없이도 한 번만 넘어가게 안전장치를 둔다. (필름 토출 1.25초 + 여유)
+  let handedOff=false;
+  const handOff=()=>{ if(handedOff) return; handedOff=true; clearTimeout(ejectFallback); detach(print,f); };
+  print.addEventListener('animationend',handOff,{once:true});
+  const ejectFallback=setTimeout(handOff,1700);
 }
 function detach(print,f){
   const r=print.getBoundingClientRect();
