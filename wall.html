@@ -348,7 +348,12 @@ body.cine #roll{opacity:0;pointer-events:none;}          /* 셔터 연출 중에
    제목 19px·곡 제목 10px로 줌 너머에선 읽기 어려웠다 */
 @media (min-width:1000px) and (min-height:700px){
   .camera-wrap{width:min(82vw,46vh);}
-  .modal-photo{width:min(84vw,56vh);}
+  /* 사진 칸은 높이 기준으로 키운다(가로:세로 = 88:107). 56vh 로 키웠을 땐 1080p 에서 높이 735px 라
+     이름·음악 줄까지 화면을 거의 채웠다. 48vh → 폭 518px · 높이 630px */
+  .modal-photo{width:min(84vw,48vh);}
+  /* 카드 최대 폭(420px)을 그대로 두면 커진 사진이 카드 밖으로 비어져 나가 오른쪽으로 쏠리고,
+     카드 모서리에 붙은 닫기(×)가 사진 한가운데 떠 보였다 → 카드가 사진 폭을 따라가게 */
+  .modal-card{max-width:92vw;}
   .modal-photo .cap .q{font-size:24px;}
   .byline .line1{font-size:20px;}
   .byline .tag{font-size:15px;}
