@@ -248,7 +248,9 @@ body.cine #shutter::after{animation:none;opacity:0;}
 #modal.open .modal-card{transform:scale(1);}
 .modal-photo{position:relative;width:min(84vw,380px,46vh);aspect-ratio:88/107;border-radius:2px;
   background:linear-gradient(170deg,#fefefe,#f1f0eb);
-  box-shadow:0 30px 60px -16px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.9) inset;}
+  /* 그림자가 사진 아래로 74px까지 뻗어, 18px 아래에서 시작하는 '○○님의 N분기 다이어리' 줄에 56px 겹쳐 글자가 탁해 보였다.
+     → 사진 바로 아래에서 끝나게(뻗는 거리 = 14+18-14 = 18px) 줄이고 진하기는 유지 */
+  box-shadow:0 14px 18px -14px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.9) inset;}
 .modal-photo .img{position:absolute;top:5%;left:5%;right:5%;bottom:21%;border-radius:1px;overflow:hidden;
   box-shadow:0 0 0 1px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.3) inset;}
 .modal-photo .img .photo{position:absolute;inset:0;background-size:cover;background-position:center;
