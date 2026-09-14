@@ -369,7 +369,8 @@ body.cine:not(.popup) #roll{opacity:0;pointer-events:none;}          /* 셔터 �
   /* 카드 최대 폭(420px)을 그대로 두면 커진 사진이 카드 밖으로 비어져 나가 오른쪽으로 쏠리고,
      카드 모서리에 붙은 닫기(×)가 사진 한가운데 떠 보였다 → 카드가 사진 폭을 따라가게 */
   .modal-card{max-width:92vw;}
-  .modal-photo .cap .q{font-size:24px;}
+  /* 폴라로이드 아래 제목은 사진을 키울 때 24px 로 같이 올렸더니 사진에 비해 커 보였다 → 휴대폰과 같은 19px (09-15 크기 비교 후 결정) */
+  .modal-photo .cap .q{font-size:19px;}
   .byline .line1{font-size:20px;}
   .byline .tag{font-size:15px;}
   .music button{font-size:14px;padding:13px 24px;}
