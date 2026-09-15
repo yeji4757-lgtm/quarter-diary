@@ -32,10 +32,13 @@ body{font-family:'NanumSquareNeo','Helvetica Neue',-apple-system,'Apple SD Gothi
 #world::after{content:"";position:absolute;inset:0;z-index:60;pointer-events:none;opacity:.05;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   mix-blend-mode:overlay;}
-.bar{position:fixed;left:0;right:0;height:0;background:#000;z-index:55;
-  transition:height .9s cubic-bezier(.5,0,.2,1);pointer-events:none;}
-.bar.top{top:0;} .bar.bot{bottom:0;}
-body.cine .bar{height:7vh;}
+/* 촬영 중 화면 위아래를 그늘지게 (시안 '나'). 예전엔 검은 띠가 내려와 화면을 7vh 씩 잘라서,
+   사진마다 화면 크기가 달라 보이고 사진도 그만큼 작아졌다 → 자르지 않고 가장자리만 어둡게 */
+.bar{position:fixed;left:0;right:0;height:20vh;opacity:0;z-index:55;
+  transition:opacity .9s cubic-bezier(.5,0,.2,1);pointer-events:none;}
+.bar.top{top:0;background:linear-gradient(180deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.72) 30%,rgba(0,0,0,0) 100%);}
+.bar.bot{bottom:0;background:linear-gradient(0deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.72) 30%,rgba(0,0,0,0) 100%);}
+body.cine .bar{opacity:1;}
 .rig{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
   transition:transform 1.1s cubic-bezier(.5,0,.2,1), opacity .8s ease;will-change:transform;}
 
