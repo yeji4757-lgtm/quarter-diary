@@ -912,6 +912,9 @@ function fitCaption(pin){
 }
 /* place all shot photos on the wall in a count-aware grid, then reveal */
 function revealWall(){
+  // 사진 벽에서는 '촬영 중' 표시를 항상 끈다. 예전엔 #wall 바로가기·'벽 보기'로 들어오면 이 표시가 켜진 채라
+  // 위아래 그늘이 제목을 덮고(그늘 20vh, 제목은 14vh 지점), 커서도 숨겨졌다.
+  document.body.classList.remove('cine','shooting','aiming');
   roll.classList.remove('on');
   hint.classList.add('fade-out');
   shutter.style.pointerEvents='none';
@@ -1128,7 +1131,7 @@ function offerResume(){
     frameNo.textContent=String(Math.min(idx+1,FRAMES.length)).padStart(2,'0');
     brandFoot.classList.add('fade-out');
     chip.remove();
-    if(all){ document.body.classList.add('cine'); revealWall(); }
+    if(all){ revealWall(); }
     else renderRoll();
   };
   no.onclick=()=>{ clearRoll(); chip.remove(); };
@@ -1147,7 +1150,6 @@ function offerResume(){
 /* dev/preview shortcut: open with #wall to jump straight to the finished wall */
 function jumpToWall(){
   SHOTS=FRAMES.map((_,i)=>i); idx=FRAMES.length;
-  document.body.classList.add('cine');
   revealWall();
 }
 // #wall 바로가기는 사진을 다 불러온 뒤(loadRoll 끝)에 처리한다
