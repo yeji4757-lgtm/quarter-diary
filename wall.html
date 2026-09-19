@@ -113,6 +113,23 @@ body.shooting .spot{opacity:1;width:126%;}
   gap:clamp(10px,2.4vh,30px);padding:16vh 5vw 7vh;}
 #wall.on{display:flex;}
 .wall-row{display:flex;justify-content:center;gap:clamp(10px,2vw,28px);}
+/* 휴대폰(768px 미만): 화면에 억지로 맞추지 않고 2열로 놓아 아래로 내려 본다 (시안 '다').
+   13명부터 잘리던 문제와 8px 캡션 문제를 함께 해결. 사진은 모두 같은 크기, 오른쪽 열을 반 칸 내려 지그재그로 */
+#wall.on.mobile{display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;pointer-events:auto;
+  padding:0 16px calc(120px + env(safe-area-inset-bottom));scrollbar-width:none;}
+#wall.mobile::-webkit-scrollbar{display:none;}
+#wall.mobile .wall-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;align-items:start;}
+#wall.mobile .wall-col{display:flex;flex-direction:column;gap:22px;}
+#wall.mobile .wall-col.right{padding-top:calc(var(--pw,150px) * .42);}   /* 반 칸쯤 내려서 지그재그 */
+#wall.mobile .pinned{width:100%;}
+/* 폰에서는 제목을 화면에 고정하지 않고 사진과 함께 스크롤되게 한다 (고정해 두면 지나가는 사진과 글자가 겹쳤다).
+   고정 제목은 숨기고, 같은 내용을 스크롤 영역 맨 위에 복사해 넣는다 */
+body.wall-mobile #wallTitle{display:none;}
+#wall.mobile .wall-title.inflow{position:static;opacity:1;padding:max(11vh,64px) 0 30px;margin:0 -16px;}   /* 좌우 여백만큼 넓혀 제목이 한 줄에 들어가게 */
+#wall.mobile .wall-title.inflow .sub{margin-top:10px;}
+body.wall-mobile .wall-foot{display:none;}
+/* 스크롤되는 사진 위에 뜨는 버튼이라 또렷한 알약 모양으로 */
+body.wall-mobile #resetBtn.show{opacity:1;background:#15181b;border-color:#2f3438;color:#d9d4ca;box-shadow:0 8px 22px rgba(0,0,0,.55);}
 .pinned{position:relative;width:var(--pw,120px);aspect-ratio:88 / 107;
   border-radius:2px 2px 5px 5px;
   background:linear-gradient(170deg,#fefefe 0%,#fafaf7 55%,#f1f0eb 100%);
@@ -563,7 +580,7 @@ function presentShot(free,f){
 resetBtn.addEventListener('click',()=>{
   closeModal();
   wall.innerHTML=''; ejector.innerHTML='';
-  wall.classList.remove('final','on');
+  wall.classList.remove('final','on','mobile'); document.body.classList.remove('wall-mobile');
   document.getElementById('wallTitle').classList.remove('show');
   document.getElementById('wallFoot').classList.remove('show');
   document.querySelectorAll('.freeprint').forEach(e=>e.remove());
@@ -903,17 +920,29 @@ function revealWall(){
     world.style.transition='opacity .9s ease, transform .9s ease';
     world.style.opacity='0'; world.style.transform='scale(.96)';
   }else{ world.style.opacity='0'; }
-  const rowCounts=rowLayout(SHOTS.length);
+  const mobile=isWallMobile();
+  const rowCounts=mobile ? [] : rowLayout(SHOTS.length);
   brandFoot.classList.add('fade-out');
-  const pw=sizePins(rowCounts);
+  const pw=mobile ? mobilePinWidth() : sizePins(rowCounts);
   wall.style.setProperty('--pw', pw+'px');
+  wall.classList.toggle('mobile',mobile); document.body.classList.toggle('wall-mobile',mobile);
   const rots=[-4,3,-2.5,4,-3.5,2,-4.5,3.5,-2,4.5];
   setTimeout(()=>{
     wall.innerHTML='';
     wall.classList.add('on');
     const pins=[];
     let k=0;
-    rowCounts.forEach(count=>{
+    // 폰: 2열(왼쪽·오른쪽 번갈아) — 오른쪽 열이 반 칸 내려가 있어 순서대로 지그재그로 읽힌다
+    let cols=null;
+    if(mobile){
+      const t=document.getElementById('wallTitle').cloneNode(true);
+      t.removeAttribute('id'); t.classList.add('inflow','show'); wall.appendChild(t);
+      cols=document.createElement('div'); cols.className='wall-cols';
+      cols.innerHTML='<div class="wall-col left"></div><div class="wall-col right"></div>';
+      wall.appendChild(cols);
+    }
+    const groups = mobile ? [SHOTS.length] : rowCounts;
+    groups.forEach(count=>{
       const row=document.createElement('div');
       row.className='wall-row';
       for(let c=0;c<count;c++,k++){
@@ -933,10 +962,10 @@ function revealWall(){
           '<div class="img"><div class="photo" style="'+photoInline(f)+'"></div></div>'+
           '<div class="caption"></div>';
         pin.querySelector('.caption').textContent=label;   // XSS 방지: 캡션은 textContent
-        row.appendChild(pin);
+        if(mobile) cols.children[k%2].appendChild(pin); else row.appendChild(pin);
         pins.push(pin);
       }
-      wall.appendChild(row);
+      if(!mobile) wall.appendChild(row);
     });
     pins.forEach(fitCaption);
     pins.forEach((pin,i)=>{
@@ -955,11 +984,17 @@ function revealWall(){
     resetBtn.classList.add('show');
   }, reduce?100:650);
 }
+/* 휴대폰 판정: 폭 768px 미만. 사진 폭 = (화면 폭 − 좌우 여백 32 − 열 사이 14) / 2 */
+function isWallMobile(){ return innerWidth<768; }
+function mobilePinWidth(){ return Math.floor((innerWidth-32-14)/2); }
 /* keep the grid fitted if the window resizes while the wall is up */
 addEventListener('resize',()=>{
   if(!wall.classList.contains('on')) return;
-  const counts=[...wall.querySelectorAll('.wall-row')].map(r=>r.children.length);
-  if(counts.length) wall.style.setProperty('--pw', sizePins(counts)+'px');
+  if(wall.classList.contains('mobile')){ wall.style.setProperty('--pw', mobilePinWidth()+'px'); }
+  else{
+    const counts=[...wall.querySelectorAll('.wall-row')].map(r=>r.children.length);
+    if(counts.length) wall.style.setProperty('--pw', sizePins(counts)+'px');
+  }
   wall.querySelectorAll('.pinned').forEach(fitCaption);
 });
 musicBtn.addEventListener('click',()=>{
