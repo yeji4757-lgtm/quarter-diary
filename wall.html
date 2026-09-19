@@ -1134,6 +1134,14 @@ function offerResume(){
   no.onclick=()=>{ clearRoll(); chip.remove(); };
   chip.append(t,yes,no);
   document.body.appendChild(chip);
+  // 고르지 않고 두면 8초 뒤 스르륵 사라진다 (저장된 기록은 지우지 않는다 — 새로고침하면 다시 물어본다).
+  // 마우스를 올려둔 동안에는 사라지지 않는다.
+  let timer=null;
+  const bye=()=>{ if(!chip.isConnected) return; chip.style.transition='opacity .4s ease'; chip.style.opacity='0'; setTimeout(()=>chip.remove(),420); };
+  const arm=()=>{ clearTimeout(timer); timer=setTimeout(bye,8000); };
+  chip.addEventListener('mouseenter',()=>clearTimeout(timer));
+  chip.addEventListener('mouseleave',arm);
+  arm();
 }
 
 /* dev/preview shortcut: open with #wall to jump straight to the finished wall */
