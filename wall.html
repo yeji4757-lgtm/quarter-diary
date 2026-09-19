@@ -118,8 +118,8 @@ body.shooting .spot{opacity:1;width:126%;}
 #wall.on.mobile{display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;pointer-events:auto;
   padding:0 16px calc(120px + env(safe-area-inset-bottom));scrollbar-width:none;}
 #wall.mobile::-webkit-scrollbar{display:none;}
-#wall.mobile .wall-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;align-items:start;}
-#wall.mobile .wall-col{display:flex;flex-direction:column;gap:22px;}
+#wall.mobile .wall-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 20px;align-items:start;}
+#wall.mobile .wall-col{display:flex;flex-direction:column;gap:32px;}   /* 사진 사이 여백 (09-20: 22→32, 열 사이 14→20) */
 #wall.mobile .wall-col.right{padding-top:calc(var(--pw,150px) * .42);}   /* 반 칸쯤 내려서 지그재그 */
 #wall.mobile .pinned{width:100%;}
 /* 폰에서는 제목을 화면에 고정하지 않고 사진과 함께 스크롤되게 한다 (고정해 두면 지나가는 사진과 글자가 겹쳤다).
@@ -987,9 +987,9 @@ function revealWall(){
     resetBtn.classList.add('show');
   }, reduce?100:650);
 }
-/* 휴대폰 판정: 폭 768px 미만. 사진 폭 = (화면 폭 − 좌우 여백 32 − 열 사이 14) / 2 */
+/* 휴대폰 판정: 폭 768px 미만. 사진 폭 = (화면 폭 − 좌우 여백 32 − 열 사이 20) / 2 */
 function isWallMobile(){ return innerWidth<768; }
-function mobilePinWidth(){ return Math.floor((innerWidth-32-14)/2); }
+function mobilePinWidth(){ return Math.floor((innerWidth-32-20)/2); }
 /* keep the grid fitted if the window resizes while the wall is up */
 addEventListener('resize',()=>{
   if(!wall.classList.contains('on')) return;
