@@ -309,7 +309,9 @@ body.cine #shutter::after{animation:none;opacity:0;}
   body.aim, body.aim *{cursor:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22'><g fill='none' stroke='%23f2efe7' stroke-width='1.4' stroke-linecap='round'><path d='M1.4 1.4h4M1.4 1.4v4M20.6 1.4h-4M20.6 1.4v4M1.4 20.6h4M1.4 20.6v-4M20.6 20.6h-4M20.6 20.6v-4'/><path d='M11.0 7.699999999999999v2.5M11.0 11.8v2.5M7.699999999999999 11.0h2.5M11.8 11.0h2.5' stroke='%238fc9bc'/></g></svg>") 11 11, crosshair;}
   body.aim #shutter{cursor:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22'><g fill='none' stroke='%23f2efe7' stroke-width='1.4' stroke-linecap='round'><path d='M1.4 1.4h4M1.4 1.4v4M20.6 1.4h-4M20.6 1.4v4M1.4 20.6h4M1.4 20.6v-4M20.6 20.6h-4M20.6 20.6v-4'/></g><circle cx='11.0' cy='11.0' r='2.4' fill='%23d9542f'/></svg>") 11 11, pointer;}
 }
-body.aim-hide, body.aim-hide *, body.cine, body.cine *{cursor:none !important;}   /* 3초 정지 또는 촬영 연출 중 */
+/* 커서 숨김: 3초 정지했을 때, 그리고 셔터→필름 연출이 도는 동안만.
+   팝업(사진·이름·음악)이 떠 있는 동안은 'cine' 가 유지돼도 눌러야 할 것이 있으니 보여준다 */
+body.aim-hide, body.aim-hide *, body.cine:not(.popup), body.cine:not(.popup) *{cursor:none !important;}
 /* hidden YouTube audio host */
 #ytHost{position:fixed;width:1px;height:1px;left:-9999px;top:-9999px;opacity:0;pointer-events:none;}
 .np{margin-top:10px;text-align:center;font-size:10px;letter-spacing:.02em;color:#9a938a;
