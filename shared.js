@@ -222,7 +222,7 @@ window.QD = (function () {
     if (compact) {
       const btn = document.createElement("button");
       btn.type = "button"; btn.className = "qd-nav__toggle";
-      btn.setAttribute("aria-label", "메뉴"); btn.textContent = "≡";
+      btn.setAttribute("aria-label", "메뉴");   // 아이콘(선 세 줄)은 CSS 로 그린다
       btn.onclick = () => bar.classList.toggle("is-open");
       bar.append(btn, links);
       document.body.prepend(bar);
@@ -265,9 +265,13 @@ window.QD = (function () {
 /* 발표 화면용: 왼쪽 위 작은 버튼, 누르면 링크 펼침 */
 .qd-nav--compact{left:12px;right:auto;top:12px;padding:0;background:none;border:0;backdrop-filter:none;
   -webkit-backdrop-filter:none;display:block;}
-.qd-nav__toggle{width:34px;height:34px;border-radius:50%;border:1px solid rgba(143,201,188,.35);
-  background:rgba(12,14,16,.6);color:#8fc9bc;font-size:18px;line-height:1;cursor:pointer;opacity:.55;}
+/* 메뉴 버튼: 동그라미 없이 선 세 줄만. 누르는 영역은 34px 그대로. 밝은 사진 위에서도 보이게 옅은 그림자 */
+.qd-nav__toggle{position:relative;width:34px;height:34px;padding:0;border:0;background:none;cursor:pointer;opacity:.6;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.65));}
+.qd-nav__toggle::before{content:"";position:absolute;left:10px;right:10px;top:50%;height:1.6px;margin-top:-.8px;border-radius:1px;
+  background:#8fc9bc;box-shadow:0 -5px 0 #8fc9bc,0 5px 0 #8fc9bc;}   /* 예전 ≡ 글자와 비슷한 크기(폭 14px) */
 .qd-nav__toggle:hover{opacity:1;}
+.qd-nav__toggle:focus-visible{outline:2px solid #8fc9bc;outline-offset:2px;border-radius:6px;}
 .qd-nav--compact .qd-nav__links{display:none;flex-direction:column;gap:2px;margin-top:8px;
   background:rgba(12,14,16,.92);border:1px solid #2a2e31;border-radius:6px;padding:6px;}
 .qd-nav--compact.is-open .qd-nav__links{display:flex;}
