@@ -185,6 +185,8 @@ function newestPerMemberPerQuarter(rows){
 }
 
 function thumb(url){ return url ? "url('" + String(url).replace(/['"\\]/g,'') + "')" : ''; }
+/* 올린 사람이 맞춰 둔 초점(pos)을 미리보기에서도 그대로 쓴다 — 발표 화면과 다르게 잘리지 않도록 */
+function focus(r){ return String(r.pos || '50% 50%').replace(/['"\\;]/g,''); }
 
 /* ---- 분기 카드 ---- */
 function renderQuarters(){
@@ -200,7 +202,7 @@ function renderQuarters(){
     if(shots.length) a.href = 'wall.html?y=' + q.year + '&q=' + q.quarter;
 
     const strip = shots.slice(0,4).map(r=>
-      '<i style="background-image:' + thumb(r.url) + '"></i>').join('');
+      '<i style="background-image:' + thumb(r.url) + ';background-position:' + focus(r) + '"></i>').join('');
     const more = shots.length > 4
       ? '<i class="more">+' + (shots.length - 4) + '</i>' : '';
 
@@ -268,7 +270,7 @@ function renderShots(memberId){
       ? '<a class="yt" href="'+String(r.music).replace(/"/g,'&quot;')+'" target="_blank" rel="noopener">음악 들으러 가기 →</a>'
       : '';
     d.innerHTML =
-      '<span class="ph" style="background-image:'+thumb(r.url)+'"></span>' +
+      '<span class="ph" style="background-image:'+thumb(r.url)+';background-position:'+focus(r)+'"></span>' +
       '<div class="tx"><div class="qq">'+r.year+' · Q'+r.quarter+'</div>' +
       '<div class="tt">'+ (r.title||'제목 없음') +'</div>' + yt + '</div>';
     elShots.appendChild(d);

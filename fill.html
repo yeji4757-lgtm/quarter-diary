@@ -156,8 +156,7 @@ h1 em{display:block;font-style:normal;font-size:11px;font-weight:800;letter-spac
       <figcaption id="doneCap"></figcaption>
     </figure>
     <p class="sub" id="doneSong" style="text-align:center"></p>
-    <button type="button" class="ghost" id="doneMore" style="margin-top:26px">다른 사람 것도 채우기</button>
-    <a class="archive-link" href="archive.html">보관함으로 돌아가기</a>
+    <a class="archive-link" href="archive.html" style="margin-top:30px">보관함으로 돌아가기</a>
   </section>
 
   <div class="foot">기획자의 독서</div>
@@ -282,7 +281,6 @@ $('goFill').onclick = ()=>{
 };
 $('backPick').onclick = ()=>show('stepPick');
 $('backShow').onclick = ()=>show('stepShow');
-$('doneMore').onclick = ()=>{ renderNames(); show('stepPick'); };
 
 $('form').addEventListener('submit', async e=>{
   e.preventDefault();
