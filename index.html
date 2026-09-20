@@ -91,11 +91,12 @@ h1 span{color:var(--mint);}
 .mode .dot{width:7px;height:7px;border-radius:50%;flex:none;}
 .mode.local .dot{background:#e3c98a;} .mode.shared .dot{background:var(--mint);}
 
-/* 보관함으로 가는 길 — 업로드가 주인공이라 일부러 눈에 덜 띄게: 바닥 글과 같은 옅은 색, 작은 글씨, 밑줄은 올렸을 때만 */
-.archive-link{margin-top:auto;padding-top:40px;text-align:center;font-size:11.5px;font-weight:500;letter-spacing:.02em;
-  color:#6f685e;text-decoration:none;}
-.archive-link:hover,.archive-link:focus-visible{color:#9a938a;text-decoration:underline;text-underline-offset:3px;outline:none;}
-.archive-link + .foot, .done .archive-link + .foot{margin-top:0;padding-top:14px;}
+/* 보관함으로 가는 길 — 업로드가 주인공이라 일부러 눈에 덜 띄게(옅은 색·작은 글씨).
+   서명('기획자의 독서') 바로 위에 두면 같은 색 글씨 두 줄이 붙어 한 덩어리처럼 읽혀 어색했다
+   → 버튼들 바로 아래로 올리고 옅은 밑줄로 '누르는 것'임을 알린다. 서명은 맨 아래에 혼자 둔다 */
+.archive-link{display:block;margin-top:18px;text-align:center;font-size:11.5px;font-weight:500;letter-spacing:.02em;
+  color:#6f685e;text-decoration:underline;text-decoration-color:#4a4640;text-decoration-thickness:1px;text-underline-offset:4px;}
+.archive-link:hover,.archive-link:focus-visible{color:#9a938a;text-decoration-color:#9a938a;outline:none;}
 .foot{margin-top:auto;padding-top:44px;text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.42em;
   text-transform:uppercase;color:#5f594f;}
 
