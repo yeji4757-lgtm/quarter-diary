@@ -490,7 +490,14 @@ let FRAMES=[];
 /* 사진 렌더 헬퍼: 실제 업로드 사진(url) + 멤버가 맞춘 초점(pos) 반영 */
 function photoBG(f){ return f && f.url ? "url('"+String(f.url).replace(/['"\\]/g,'')+"')" : ((f&&f.grad)||'linear-gradient(135deg,#8fc9bc,#bcd6a0)'); }
 function photoPos(f){ const p=(f&&f.pos)||'center'; return /^[\d.\s%a-z]+$/i.test(p)?p:'center'; }
-function photoInline(f){ return 'background-image:'+photoBG(f)+';background-position:'+photoPos(f); }
+/* 확대 배율(zoom). 100 = 칸에 꽉 찬 기본 크기. 초점을 기준으로 키워야 끌어 맞춘 자리가 그대로 남는다.
+   .img 가 overflow:hidden 이라 커진 만큼은 칸 밖으로 안 넘친다 */
+function photoScale(f){ const z=Number(f&&f.zoom); return (z>=100&&z<=400)?z/100:1; }
+function photoInline(f){
+  const z=photoScale(f), pos=photoPos(f);
+  return 'background-image:'+photoBG(f)+';background-position:'+pos+
+    (z!==1 ? ';transform:scale('+z+');transform-origin:'+pos : '');
+}
 const SPOTS_UNUSED=null; // wall layout is now count-aware (rowLayout/sizePins); fixed spots removed
 const world=document.getElementById('world');
 const ejector=document.getElementById('ejector');
@@ -1189,7 +1196,7 @@ addEventListener('hashchange',()=>{ if(location.hash==='#wall') jumpToWall(); })
 function mapRow(r){
   return { id:r.id, q:'Q'+r.quarter, date:String(r.year),
     name:(r.name||'').trim(), title:(r.title||'').trim(),
-    url:r.url||'', pos:r.pos||'center', yt:r.music||'' };
+    url:r.url||'', pos:r.pos||'center', zoom:r.zoom||100, yt:r.music||'' };
 }
 
 // 사진이 하나도 없을 때 — 가짜 데모 대신 사실대로 알린다

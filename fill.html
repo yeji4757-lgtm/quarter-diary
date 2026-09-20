@@ -41,7 +41,8 @@ h1 em{display:block;font-style:normal;font-size:11px;font-weight:800;letter-spac
   font-family:inherit;font-size:15px;font-weight:700;letter-spacing:.01em;transition:color .2s,border-color .2s;}
 .names button:first-child{border-top:1px solid var(--line);}
 .names button:hover,.names button:focus-visible{color:var(--mint);border-color:rgba(143,201,188,.45);outline:none;}
-.names .th{width:34px;height:34px;flex:none;border-radius:2px;background:#1a1d1f center/cover no-repeat;}
+.names .th{position:relative;width:34px;height:34px;flex:none;border-radius:2px;background:#1a1d1f;overflow:hidden;}
+.names .th i{position:absolute;inset:0;background:center/cover no-repeat;}
 .names .st{margin-left:auto;font-size:10.5px;font-weight:500;letter-spacing:.04em;color:var(--ink-faint);}
 .names .st.done{color:var(--mint-ink);}
 
@@ -50,14 +51,26 @@ h1 em{display:block;font-style:normal;font-size:11px;font-weight:800;letter-spac
   padding:5% 5% 0;border-radius:2px;box-shadow:0 20px 40px -18px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.9) inset;
   animation:rise .55s cubic-bezier(.22,1,.36,1);}
 @keyframes rise{from{opacity:0;transform:translateY(12px) rotate(-1.2deg);}to{opacity:1;transform:none;}}
-.polar .p{width:100%;aspect-ratio:1/1;background:#1a1d1f center/cover no-repeat;border-radius:1px;
+/* 창(.p)은 넘치는 부분을 자르고, 안쪽(.pi)이 실제 사진. 확대는 안쪽을 키우는 방식이라 창 밖으로 안 삐져나온다 */
+.polar .p{position:relative;width:100%;aspect-ratio:1/1;background:#1a1d1f;border-radius:1px;overflow:hidden;
   box-shadow:0 0 0 1px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.3) inset;}
+.polar .pi{position:absolute;inset:0;background:center/cover no-repeat;}
 .polar figcaption{padding:13px 4px 16px;text-align:center;font-size:14px;font-weight:800;color:#2a2622;
   word-break:keep-all;line-height:1.4;}
 .polar figcaption.empty{color:#a8a29a;font-weight:500;}
 /* 사진 끌어서 위치 맞추기 — 업로드 페이지의 조작을 그대로 가져왔다 */
-#showPhoto{cursor:grab;touch-action:none;}
-#showPhoto.dragging{cursor:grabbing;}
+#showWin{cursor:grab;touch-action:none;}
+#showWin.dragging{cursor:grabbing;}
+/* 확대 막대 */
+.zoomRow{display:flex;align-items:center;gap:11px;margin-top:14px;}
+.zoomRow .lab{font-size:10px;font-weight:800;letter-spacing:.2em;color:var(--ink-faint);flex:none;}
+.zoomRow .val{font-size:11.5px;color:var(--ink-soft);flex:none;width:44px;text-align:right;
+  font-variant-numeric:tabular-nums;}
+.zoomRow input[type=range]{flex:1;appearance:none;-webkit-appearance:none;height:22px;background:none;cursor:pointer;}
+.zoomRow input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--line);border-radius:2px;}
+.zoomRow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--mint);margin-top:-7px;border:0;}
+.zoomRow input[type=range]:focus-visible{outline:2px solid var(--mint);outline-offset:3px;border-radius:4px;}
 .drag-hint{margin-top:12px;text-align:center;font-size:11.5px;letter-spacing:.02em;color:var(--ink-faint);}
 .drag-hint.moved{color:var(--mint);}
 
@@ -125,10 +138,15 @@ h1 em{display:block;font-style:normal;font-size:11px;font-weight:800;letter-spac
   <section class="step" id="stepShow">
     <h1><em id="showDate">2026 · 00 · 00</em>이 사진, 기억나세요?</h1>
     <figure class="polar">
-      <div class="p" id="showPhoto" role="img" aria-label="그날 남긴 사진"></div>
+      <div class="p" id="showWin"><div class="pi" id="showPhoto" role="img" aria-label="그날 남긴 사진"></div></div>
       <figcaption id="showCap" class="empty">제목을 붙여주세요</figcaption>
     </figure>
     <p class="drag-hint" id="dragHint">사진을 끌면 보이는 자리를 옮길 수 있어요</p>
+    <div class="zoomRow">
+      <span class="lab">확대</span>
+      <input type="range" id="zoomIn" min="100" max="300" step="5" value="100" aria-label="사진 확대">
+      <span class="val" id="zoomVal">100%</span>
+    </div>
     <p class="sub" id="showWho"></p>
     <button type="button" class="submit" id="goFill">채우러 가기</button>
     <button type="button" class="ghost" id="posSave" hidden>이 위치로 저장하기</button>
@@ -160,7 +178,7 @@ h1 em{display:block;font-style:normal;font-size:11px;font-weight:800;letter-spac
     <div class="mark">✓</div>
     <h1 style="text-align:center;margin-top:26px">채웠어요.</h1>
     <figure class="polar">
-      <div class="p" id="donePhoto" role="img" aria-label="채운 사진"></div>
+      <div class="p"><div class="pi" id="donePhoto" role="img" aria-label="채운 사진"></div></div>
       <figcaption id="doneCap"></figcaption>
     </figure>
     <p class="sub" id="doneSong" style="text-align:center"></p>
@@ -207,7 +225,7 @@ async function start(){
       return;
     }
     const { data, error } = await sb.from('wall')
-      .select('id,name,title,music,url,pos,order_index,hidden')
+      .select('id,name,title,music,url,pos,zoom,order_index,hidden')
       .eq('year', Q.year).eq('quarter', Q.quarter).order('order_index', { ascending: true });
     if(error) throw error;
     ROWS = (data || []).filter(r => !r.hidden);
@@ -225,7 +243,12 @@ function renderNames(){
     const b = document.createElement('button');
     b.type = 'button';
     const th = document.createElement('span');
-    th.className = 'th'; th.style.backgroundImage = bgUrl(r.url); th.style.backgroundPosition = r.pos || 'center';
+    th.className = 'th';
+    const thi = document.createElement('i');
+    thi.style.backgroundImage = bgUrl(r.url);
+    thi.style.backgroundPosition = r.pos || 'center';
+    if(r.zoom > 100){ thi.style.transformOrigin = r.pos || 'center'; thi.style.transform = 'scale(' + (r.zoom/100) + ')'; }
+    th.appendChild(thi);
     const nm = document.createElement('span'); nm.textContent = r.name || '이름 없음';
     const st = document.createElement('span');
     const filled = !!(r.title || '').trim();
@@ -247,43 +270,57 @@ function openShot(r){
   $('goFill').textContent = (r.title || '').trim() ? '고치러 가기' : '채우러 가기';
   const p = String(r.pos || '50% 50%').split(' ').map(parseFloat);
   posX = isNaN(p[0]) ? 50 : p[0]; posY = isNaN(p[1]) ? 50 : p[1];
+  zoom = (r.zoom >= 100 && r.zoom <= 400) ? r.zoom : 100;
   applyPos(); resetPosUI();
   show('stepShow');
 }
 
 /* ---- 2단계: 사진 끌어서 위치 맞추기 ---- */
-let posX = 50, posY = 50, moved = false;
-const photoEl = $('showPhoto');
+let posX = 50, posY = 50, zoom = 100, moved = false;
+const photoEl = $('showPhoto'), winEl = $('showWin'), zoomIn = $('zoomIn');
 const clampPos = v => Math.max(0, Math.min(100, v));
-function applyPos(){ photoEl.style.backgroundPosition = posX.toFixed(1) + '% ' + posY.toFixed(1) + '%'; }
+/* 초점을 기준으로 키운다 — 끌어서 맞춘 자리가 확대해도 그대로 가운데 남는다 */
+function applyPos(){
+  const p = posX.toFixed(1) + '% ' + posY.toFixed(1) + '%';
+  photoEl.style.backgroundPosition = p;
+  photoEl.style.transformOrigin = p;
+  photoEl.style.transform = zoom === 100 ? 'none' : 'scale(' + (zoom/100) + ')';
+  $('zoomVal').textContent = zoom + '%';
+}
+function markMoved(){
+  if(moved) return;
+  moved = true;
+  $('posSave').hidden = false;
+  $('dragHint').textContent = '마음에 드는 자리에서 아래 버튼을 눌러주세요';
+  $('dragHint').classList.add('moved');
+}
 function resetPosUI(){
   moved = false;
+  zoomIn.value = zoom;
   $('posSave').hidden = true;
   $('dragHint').textContent = '사진을 끌면 보이는 자리를 옮길 수 있어요';
   $('dragHint').classList.remove('moved');
   say($('showMsg'),'','');
 }
 let dragging = false, sx = 0, sy = 0, spx = 50, spy = 50;
-photoEl.addEventListener('pointerdown', e=>{
-  dragging = true; photoEl.classList.add('dragging'); photoEl.setPointerCapture(e.pointerId);
+winEl.addEventListener('pointerdown', e=>{
+  dragging = true; winEl.classList.add('dragging'); winEl.setPointerCapture(e.pointerId);
   sx = e.clientX; sy = e.clientY; spx = posX; spy = posY;
 });
-photoEl.addEventListener('pointermove', e=>{
+winEl.addEventListener('pointermove', e=>{
   if(!dragging) return;
-  const r = photoEl.getBoundingClientRect();
-  posX = clampPos(spx - (e.clientX - sx) / r.width * 100);
-  posY = clampPos(spy - (e.clientY - sy) / r.height * 100);
-  applyPos();
-  if(!moved){
-    moved = true;
-    $('posSave').hidden = false;
-    $('dragHint').textContent = '마음에 드는 자리에서 아래 버튼을 눌러주세요';
-    $('dragHint').classList.add('moved');
-  }
+  const r = winEl.getBoundingClientRect();
+  // 확대한 만큼 사진이 크니, 같은 거리를 끌어도 움직임은 그만큼 작아야 자연스럽다
+  const k = 100 / zoom;
+  posX = clampPos(spx - (e.clientX - sx) / r.width * 100 * k);
+  posY = clampPos(spy - (e.clientY - sy) / r.height * 100 * k);
+  applyPos(); markMoved();
 });
-function endDrag(){ dragging = false; photoEl.classList.remove('dragging'); }
-photoEl.addEventListener('pointerup', endDrag);
-photoEl.addEventListener('pointercancel', endDrag);
+function endDrag(){ dragging = false; winEl.classList.remove('dragging'); }
+winEl.addEventListener('pointerup', endDrag);
+winEl.addEventListener('pointercancel', endDrag);
+
+zoomIn.addEventListener('input', ()=>{ zoom = Number(zoomIn.value) || 100; applyPos(); markMoved(); });
 
 $('posSave').onclick = async ()=>{
   if(!CUR) return;
@@ -291,10 +328,10 @@ $('posSave').onclick = async ()=>{
   $('posSave').disabled = true; say($('showMsg'),'저장하는 중…','ok');
   try{
     const sb = await QD.sb();
-    const { data, error } = await sb.rpc('fill_pos', { p_id: CUR.id, p_pos: pos });
+    const { data, error } = await sb.rpc('fill_pos', { p_id: CUR.id, p_pos: pos, p_zoom: zoom });
     if(error) throw error;
     if(!data){ say($('showMsg'),'지금은 고칠 수 없는 분기예요.','err'); $('posSave').disabled = false; return; }
-    CUR.pos = pos;
+    CUR.pos = pos; CUR.zoom = zoom;
     resetPosUI();
     say($('showMsg'),'이 자리로 저장했어요.','ok');
     renderNames();                       // 이름 목록의 작은 사진에도 바로 반영
@@ -362,6 +399,8 @@ $('form').addEventListener('submit', async e=>{
     CUR.title = title; CUR.music = music;
     $('donePhoto').style.backgroundImage = bgUrl(CUR.url);
     $('donePhoto').style.backgroundPosition = CUR.pos || 'center';
+    $('donePhoto').style.transformOrigin = CUR.pos || 'center';
+    $('donePhoto').style.transform = (CUR.zoom > 100) ? 'scale(' + (CUR.zoom/100) + ')' : 'none';
     $('doneCap').textContent = title || CUR.name;
     $('doneSong').textContent = music ? '♪ 음악도 담겼어요' : '';
     say($('formMsg'),'','');

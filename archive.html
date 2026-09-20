@@ -49,8 +49,9 @@ h2{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink);
   border:1px solid rgba(143,201,188,.35);border-radius:2px;padding:4px 7px;white-space:nowrap;}
 .q .qm{font-size:11.5px;color:var(--ink-faint);margin-top:7px;letter-spacing:.02em;}
 .strip{display:flex;gap:4px;margin-top:13px;}
-.strip i{display:block;width:100%;aspect-ratio:4/5;border-radius:2px;background-size:cover;
-  background-position:center;background-color:#1d2124;}
+.strip i{position:relative;display:block;width:100%;aspect-ratio:4/5;border-radius:2px;overflow:hidden;
+  background-color:#1d2124;}
+.strip i > b{position:absolute;inset:0;background-size:cover;background-position:center;}
 .strip .more{display:flex;align-items:center;justify-content:center;font-style:normal;
   font-size:10.5px;font-weight:700;color:var(--ink-faint);background:#1d2124;}
 .q .go{font-size:11.5px;font-weight:700;color:var(--mint);margin-top:13px;letter-spacing:.02em;}
@@ -83,8 +84,8 @@ h2{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink);
 
 .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:14px;}
 .shot{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
-.shot .ph{width:100%;aspect-ratio:4/5;background-size:cover;background-position:center;
-  background-color:#1d2124;display:block;}
+.shot .ph{position:relative;width:100%;aspect-ratio:4/5;background-color:#1d2124;display:block;overflow:hidden;}
+.shot .ph > i{position:absolute;inset:0;background-size:cover;background-position:center;}
 .shot .tx{padding:11px 12px 13px;}
 .shot .qq{font-size:9.5px;font-weight:800;letter-spacing:.16em;color:var(--mint);}
 .shot .tt{font-size:13px;font-weight:700;line-height:1.5;margin-top:5px;
@@ -195,6 +196,9 @@ function thumb(url){ return url ? "url('" + String(url).replace(/['"\\]/g,'') + 
 /* 올린 사람이 맞춰 둔 초점(pos)을 미리보기에서도 그대로 쓴다 — 발표 화면과 다르게 잘리지 않도록 */
 function focus(r){ return String(r.pos || '50% 50%').replace(/['"\\;]/g,''); }
 /* 제목·이름은 멤버가 직접 넣은 글자라 화면에 넣기 전에 꺾쇠를 막는다 */
+/* 올린 사람이 맞춰 둔 확대 배율. 초점을 기준으로 키워야 맞춰 둔 자리가 그대로 남는다 */
+function zoomStyle(r){ const z=Number(r.zoom); if(!(z>100&&z<=400)) return '';
+  return ';transform-origin:'+focus(r)+';transform:scale('+(z/100)+')'; }
 function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ---- 분기 카드 ---- */
@@ -211,7 +215,7 @@ function renderQuarters(){
     if(shots.length) a.href = 'wall.html?y=' + q.year + '&q=' + q.quarter;
 
     const strip = shots.slice(0,4).map(r=>
-      '<i style="background-image:' + thumb(r.url) + ';background-position:' + focus(r) + '"></i>').join('');
+      '<i><b style="background-image:' + thumb(r.url) + ';background-position:' + focus(r) + zoomStyle(r) + '"></b></i>').join('');
     const more = shots.length > 4
       ? '<i class="more">+' + (shots.length - 4) + '</i>' : '';
 
@@ -293,7 +297,7 @@ function renderShots(memberId){
       ? '<a class="yt" href="'+esc(r.music)+'" target="_blank" rel="noopener">음악 들으러 가기 →</a>'
       : '';
     d.innerHTML =
-      '<span class="ph" style="background-image:'+thumb(r.url)+';background-position:'+focus(r)+'"></span>' +
+      '<span class="ph"><i style="background-image:'+thumb(r.url)+';background-position:'+focus(r)+zoomStyle(r)+'"></i></span>' +
       '<div class="tx"><div class="qq">'+r.year+' · Q'+r.quarter+'</div>' +
       // 제목을 아직 안 채운 기록은 '제목 없음' 대신 누구의 어느 분기인지로 채운다
       '<div class="tt">'+ esc(r.title || ((r.name||'') + '님의 ' + r.quarter + '분기 쿼터 다이어리')) +'</div>' + yt + '</div>';
