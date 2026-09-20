@@ -6,6 +6,7 @@
 <title>쿼터다이어리 - 발표</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%230c0e10'/%3E%3Crect x='24' y='20' width='52' height='60' rx='4' fill='%23fefefe'/%3E%3Crect x='30' y='26' width='40' height='38' rx='2' fill='%238fc9bc'/%3E%3Ccircle cx='50' cy='45' r='9' fill='%230c0e10' opacity='.35'/%3E%3C/svg%3E">
 <link href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquareNeo@1.0/nanumsquareneo.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&text=%270123456789%20&display=swap" rel="stylesheet">
 <!-- 공통 코드. 고칠 때마다 ?v= 숫자를 올린다 — 안 올리면 브라우저가 옛 파일을 계속 쓴다 -->
 <script src="shared.js?v=3"></script>
 <style>
@@ -253,6 +254,15 @@ body.cine #shutter::after{animation:none;opacity:0;}
 .wall-title .big{font-size:clamp(20px,6vw,34px);letter-spacing:.08em;color:#f2efe8;font-weight:300;}
 .wall-title .sub{margin-top:18px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--mint);}
 @media (min-width:700px){.wall-title{top:7%;}}
+/* 발표 날짜 — 필름 카메라가 사진 구석에 찍어주던 주황색 날짜처럼 (시안 '나').
+   어드민의 발표일(meeting_date)을 그대로 쓴다. 제목·부제 글자 크기는 건드리지 않는다 */
+.date-imprint{position:fixed;right:3.2%;bottom:6.5%;z-index:8;pointer-events:none;opacity:0;transition:opacity 1s ease .9s;
+  font-family:'Share Tech Mono',ui-monospace,'SF Mono',Menlo,monospace;font-size:clamp(18px,2.2vw,40px);letter-spacing:.12em;
+  color:#ff9a3d;text-shadow:0 0 .2em rgba(255,140,40,.75),0 0 .55em rgba(255,120,20,.35);white-space:pre;}
+.date-imprint.show{opacity:.92;}
+/* 폰: 사진이 스크롤되므로 화면에 고정하지 않고, 맨 아래 오른쪽에 도장처럼 한 번 찍는다 */
+body.wall-mobile #dateImprint{display:none;}
+#wall.mobile .date-imprint.inflow{position:static;display:block;opacity:.92;text-align:right;margin:36px 6px 0;font-size:22px;}
 .wall-foot{position:fixed;left:0;right:0;bottom:max(20px,env(safe-area-inset-bottom));z-index:8;
   text-align:center;font-size:11px;letter-spacing:.02em;text-transform:uppercase;color:#7d766b;
   opacity:0;pointer-events:none;transition:opacity 1s ease .6s;}
@@ -434,6 +444,7 @@ body.cine .eyebrow, body.cine .counter, body.cine .qd-nav, body.popup .qd-nav{op
 <div id="wall"></div>
 <div class="wall-title" id="wallTitle"><div class="big" id="wallTitleBig">QUARTER DIARY</div><div class="sub">한 장의 장면. 한 곡의 음악. 한 줄 문장으로 기억하기</div></div>
 <div class="wall-foot" id="wallFoot">기획자의 독서</div>
+<div class="date-imprint" id="dateImprint"></div>
 <div id="flash"></div>
 <div id="viewfinder"><span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span><span class="ch"></span></div>
 <div id="flashBurst"></div>
@@ -582,6 +593,7 @@ resetBtn.addEventListener('click',()=>{
   wall.innerHTML=''; ejector.innerHTML='';
   wall.classList.remove('final','on','mobile'); document.body.classList.remove('wall-mobile');
   document.getElementById('wallTitle').classList.remove('show');
+  document.getElementById('dateImprint').classList.remove('show');
   document.getElementById('wallFoot').classList.remove('show');
   document.querySelectorAll('.freeprint').forEach(e=>e.remove());
   idx=0; busy=false; frameNo.textContent='01';
@@ -982,10 +994,22 @@ function revealWall(){
       }, delay);
     });
     wall.classList.add('final');
+    // 발표 날짜 각인: '26 6 27 (발표일이 없는 분기는 아무것도 안 찍는다)
+    const stamp=imprintText(Q), di=document.getElementById('dateImprint');
+    di.textContent=stamp; di.classList.toggle('show',!!stamp);
+    if(stamp) di.setAttribute('aria-label','발표일 '+QD.dateLabel(Q)); else di.removeAttribute('aria-label');
+    if(mobile && stamp){ const c=di.cloneNode(true); c.removeAttribute('id'); c.classList.add('inflow'); wall.appendChild(c); }
     document.getElementById('wallTitle').classList.add('show');
     document.getElementById('wallFoot').classList.add('show');
     resetBtn.classList.add('show');
   }, reduce?100:650);
+}
+/* 필름 날짜 각인 글자: 2026-06-27 → '26 6 27 (옛 필름 카메라처럼 연도 두 자리, 앞의 0 없이) */
+function imprintText(q){
+  if(!q || !q.meeting_date) return '';
+  const [y,m,d]=String(q.meeting_date).split('-').map(Number);
+  if(!y||!m||!d) return '';
+  return "'"+String(y).slice(2)+' '+m+' '+d;
 }
 /* 휴대폰 판정: 폭 768px 미만. 사진 폭 = (화면 폭 − 좌우 여백 32 − 열 사이 20) / 2 */
 function isWallMobile(){ return innerWidth<768; }
