@@ -97,6 +97,16 @@ h2{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink);
   .pane{display:none;}
   .pane.on{display:block;}
   .pane > h2{display:none;}                      /* 탭 이름이 제목 역할을 한다 */
+  /* 분기 카드: 한 줄 2칸(카드 약 551px). 예전 4칸(265px)은 휴대폰 크기와 거의 같아 PC에서 작아 보였다.
+     1년에 분기는 최대 4개라, 4개가 차면 2+2 로 두 줄이 된다 */
+  .qs{grid-template-columns:repeat(2,1fr);gap:20px;}
+  .q{padding:26px 26px 24px;border-radius:8px;}
+  .q .qn{font-size:22px;}
+  .q .qb{font-size:11px;padding:6px 10px;}
+  .q .qm{font-size:13px;margin-top:10px;}
+  .strip{gap:8px;margin-top:18px;}
+  .q .go{font-size:13.5px;margin-top:18px;}
+
   /* 사람별 사진: 한 사람이 1년에 남기는 건 최대 4장(분기마다 1장)이라, 한 줄에 4장이 꽉 차는 크기로 키운다 (장당 약 268px) */
   .shots{grid-template-columns:repeat(4,1fr);gap:18px;}
   .shot .tx{padding:14px 15px 16px;}
