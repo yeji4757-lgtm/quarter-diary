@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>쿼터다이어리 - 제목·음악 채우기</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%230c0e10'/%3E%3Crect x='24' y='20' width='52' height='60' rx='4' fill='%23fefefe'/%3E%3Crect x='30' y='26' width='40' height='38' rx='2' fill='%238fc9bc'/%3E%3Ccircle cx='50' cy='45' r='9' fill='%230c0e10' opacity='.35'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquareNeo@1.0/nanumsquareneo.css" rel="stylesheet">
+<!-- 공통 코드. 고칠 때마다 ?v= 숫자를 올린다 — 안 올리면 브라우저가 옛 파일을 계속 쓴다 -->
+<script src="shared.js?v=4"></script>
+<style>
+:root{
+  --mint:#8fc9bc; --mint-ink:#2f8f78; --mint-soft:#bfe0d7;
+  --void:#0c0e10; --panel:#15181b; --line:#2a2e31;
+  --ink:#ece8e0; --ink-soft:#9a938a; --ink-faint:#6b6258;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;}
+body{font-family:'NanumSquareNeo','Helvetica Neue',-apple-system,'Apple SD Gothic Neo',sans-serif;
+  background:radial-gradient(120% 78% at 50% 0%, #15181b 0%, #0c0e10 60%);
+  color:var(--ink);min-height:100dvh;
+  padding:max(30px,env(safe-area-inset-top)) 22px calc(38px + env(safe-area-inset-bottom));
+  display:flex;justify-content:center;}
+.wrap{width:100%;max-width:440px;display:flex;flex-direction:column;
+  min-height:calc(100dvh - 30px - 38px - env(safe-area-inset-top) - env(safe-area-inset-bottom));}
+
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;}
+.eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.4em;text-transform:uppercase;color:#a49c90;}
+.quarter{font-size:10px;font-weight:800;letter-spacing:.16em;color:var(--mint);
+  border:1px solid rgba(143,201,188,.4);border-radius:999px;padding:4px 10px;}
+h1{font-weight:800;font-size:clamp(23px,6.6vw,27px);letter-spacing:.005em;color:#f4f1ea;line-height:1.36;}
+h1 em{display:block;font-style:normal;font-size:11px;font-weight:800;letter-spacing:.2em;
+  color:var(--mint);margin-bottom:12px;}
+.sub{margin-top:13px;font-size:13px;line-height:1.7;color:var(--ink-soft);word-break:keep-all;}
+
+/* 1단계 — 이름 고르기 */
+.names{margin-top:30px;display:flex;flex-direction:column;}
+.names button{display:flex;align-items:center;gap:13px;width:100%;padding:13px 4px;cursor:pointer;
+  background:none;border:0;border-bottom:1px solid var(--line);color:var(--ink);text-align:left;
+  font-family:inherit;font-size:15px;font-weight:700;letter-spacing:.01em;transition:color .2s,border-color .2s;}
+.names button:first-child{border-top:1px solid var(--line);}
+.names button:hover,.names button:focus-visible{color:var(--mint);border-color:rgba(143,201,188,.45);outline:none;}
+.names .th{width:34px;height:34px;flex:none;border-radius:2px;background:#1a1d1f center/cover no-repeat;}
+.names .st{margin-left:auto;font-size:10.5px;font-weight:500;letter-spacing:.04em;color:var(--ink-faint);}
+.names .st.done{color:var(--mint-ink);}
+
+/* 2단계 — 그날의 사진 */
+.polar{margin:30px auto 0;width:min(240px,74vw);background:linear-gradient(170deg,#fefefe,#f1f0eb);
+  padding:5% 5% 0;border-radius:2px;box-shadow:0 20px 40px -18px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.9) inset;
+  animation:rise .55s cubic-bezier(.22,1,.36,1);}
+@keyframes rise{from{opacity:0;transform:translateY(12px) rotate(-1.2deg);}to{opacity:1;transform:none;}}
+.polar .p{width:100%;aspect-ratio:1/1;background:#1a1d1f center/cover no-repeat;border-radius:1px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.3) inset;}
+.polar figcaption{padding:13px 4px 16px;text-align:center;font-size:14px;font-weight:800;color:#2a2622;
+  word-break:keep-all;line-height:1.4;}
+.polar figcaption.empty{color:#a8a29a;font-weight:500;}
+
+/* 3단계 — 채우기 */
+#form{margin-top:30px;}
+.field{padding:16px 0 13px;border-bottom:1px solid var(--line);transition:border-color .2s;}
+.field.focus{border-color:var(--mint);}
+.field label{display:block;font-size:10px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:10px;}
+.field .count{float:right;font-size:10px;color:var(--ink-faint);font-weight:400;letter-spacing:.04em;}
+.field input{width:100%;border:none;background:transparent;color:var(--ink);
+  font-size:16px;font-family:inherit;font-weight:400;padding:0;letter-spacing:.01em;}
+.field input::placeholder{color:#4f4a41;}
+.field input:focus{outline:none;}
+.musicNote{font-size:12px;line-height:1.65;margin-top:9px;color:var(--ink-faint);word-break:keep-all;}
+.musicNote:empty{display:none;}
+.musicNote.ok{color:var(--mint);}
+.musicNote.warn{color:#e3a58f;}
+
+.submit{margin-top:32px;width:100%;padding:16px;cursor:pointer;border-radius:2px;
+  border:1px solid var(--mint-ink);background:transparent;color:var(--mint-soft);
+  font-size:12.5px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;
+  transition:background .25s ease,color .25s ease,opacity .2s ease;}
+.submit:hover:not(:disabled){background:var(--mint-ink);color:#fff;}
+.submit:disabled{opacity:.35;cursor:not-allowed;}
+.ghost{margin-top:12px;width:100%;padding:13px;cursor:pointer;border-radius:2px;
+  border:1px solid var(--line);background:transparent;color:var(--ink-faint);
+  font-family:inherit;font-size:11.5px;font-weight:500;letter-spacing:.14em;transition:color .2s,border-color .2s;}
+.ghost:hover{color:var(--ink-soft);border-color:#3a3f43;}
+.msg{margin-top:15px;text-align:center;font-size:12px;letter-spacing:.02em;min-height:17px;line-height:1.5;}
+.msg.ok{color:var(--mint);} .msg.err{color:#e69a8a;}
+
+.mark{width:60px;height:60px;border-radius:50%;margin:6px auto 0;border:1.5px solid var(--mint);
+  display:flex;align-items:center;justify-content:center;color:var(--mint);font-size:26px;font-weight:200;
+  animation:markPop .5s cubic-bezier(.2,1.3,.5,1) .15s both;}
+@keyframes markPop{from{opacity:0;transform:scale(.5);}to{opacity:1;transform:scale(1);}}
+
+.archive-link{display:block;margin-top:18px;text-align:center;font-size:11.5px;font-weight:500;letter-spacing:.02em;
+  color:#6f685e;text-decoration:underline;text-decoration-color:#4a4640;text-decoration-thickness:1px;text-underline-offset:4px;}
+.archive-link:hover,.archive-link:focus-visible{color:#9a938a;text-decoration-color:#9a938a;outline:none;}
+.foot{margin-top:auto;padding-top:44px;text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.42em;
+  text-transform:uppercase;color:#5f594f;}
+.note{font-size:13px;color:var(--ink-soft);line-height:1.8;margin-top:30px;word-break:keep-all;}
+.step{display:none;}
+.step.on{display:block;animation:fade .45s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="top">
+    <div class="eyebrow">Quarter Diary</div>
+    <div class="quarter" id="badge">Q-</div>
+  </div>
+
+  <!-- 1단계: 이름 고르기 -->
+  <section class="step on" id="stepPick">
+    <h1><em id="pickQ">불러오는 중</em>누구의 기록을 채울까요?</h1>
+    <p class="sub">사진은 이미 올라와 있어요. 제목과 음악만 더하면 돼요.</p>
+    <div class="names" id="names"></div>
+    <div class="msg" id="pickMsg"></div>
+  </section>
+
+  <!-- 2단계: 그날의 사진 (시안 라) -->
+  <section class="step" id="stepShow">
+    <h1><em id="showDate">2026 · 00 · 00</em>이 사진, 기억나세요?</h1>
+    <figure class="polar">
+      <div class="p" id="showPhoto" role="img" aria-label="그날 남긴 사진"></div>
+      <figcaption id="showCap" class="empty">제목을 붙여주세요</figcaption>
+    </figure>
+    <p class="sub" id="showWho"></p>
+    <button type="button" class="submit" id="goFill">채우러 가기</button>
+    <button type="button" class="ghost" id="backPick">다른 사람 고르기</button>
+  </section>
+
+  <!-- 3단계: 제목·음악 -->
+  <section class="step" id="stepForm">
+    <h1><em id="formWho">이름</em>두 칸만 채워주세요.</h1>
+    <form id="form" novalidate>
+      <div class="field" id="fTitle">
+        <label for="inTitle">한 줄 제목 <span class="count" id="count">0 / 30</span></label>
+        <input id="inTitle" type="text" maxlength="30" placeholder="그날을 한 문장으로" autocomplete="off">
+      </div>
+      <div class="field" id="fMusic">
+        <label for="inMusic">음악</label>
+        <input id="inMusic" type="url" placeholder="유튜브 링크를 붙여넣기" autocomplete="off" inputmode="url">
+        <div class="musicNote" id="musicNote" aria-live="polite"></div>
+      </div>
+      <button type="submit" class="submit" id="save">저장하기</button>
+      <button type="button" class="ghost" id="backShow">그만두기</button>
+      <div class="msg" id="formMsg"></div>
+    </form>
+  </section>
+
+  <!-- 4단계: 완료 -->
+  <section class="step" id="stepDone">
+    <div class="mark">✓</div>
+    <h1 style="text-align:center;margin-top:26px">채웠어요.</h1>
+    <figure class="polar">
+      <div class="p" id="donePhoto" role="img" aria-label="채운 사진"></div>
+      <figcaption id="doneCap"></figcaption>
+    </figure>
+    <p class="sub" id="doneSong" style="text-align:center"></p>
+    <button type="button" class="ghost" id="doneMore" style="margin-top:26px">다른 사람 것도 채우기</button>
+    <a class="archive-link" href="archive.html">보관함으로 돌아가기</a>
+  </section>
+
+  <div class="foot">기획자의 독서</div>
+</main>
+
+<script>
+/* 지난 분기의 제목·음악을 멤버가 직접 채우는 화면.
+   업로드 페이지(index.html)는 '지금 분기'에 새 사진을 올리는 곳이라 건드리지 않고 따로 뒀다.
+   저장은 서버 함수 fill_entry 로만 한다 — 제목·음악만, 그것도 업로드가 열린 분기만 고칠 수 있다. */
+const $ = id => document.getElementById(id);
+const bgUrl = u => "url('" + String(u || '').replace(/['"\\]/g, '') + "')";
+let Q = null, ROWS = [], CUR = null;
+
+function show(step){
+  ['stepPick','stepShow','stepForm','stepDone'].forEach(id=>$(id).classList.toggle('on', id===step));
+  window.scrollTo(0,0);
+}
+function say(el, text, kind){ el.textContent = text; el.className = 'msg' + (kind ? ' ' + kind : ''); }
+
+/* 2026 · 04 · 05 */
+function dateLine(q){
+  if(!q || !q.meeting_date) return q ? q.label : '';
+  const [y,m,d] = q.meeting_date.split('-');
+  return y + ' · ' + m + ' · ' + d;
+}
+
+async function start(){
+  const p = new URLSearchParams(location.search);
+  const year = Number(p.get('y')), quarter = Number(p.get('q'));
+  try{
+    const sb = await QD.sb();
+    Q = (year && quarter) ? await QD.getQuarter(year, quarter) : await QD.currentQuarter();
+    if(!Q){ $('pickQ').textContent = ''; say($('pickMsg'),'분기를 찾지 못했어요. 보관함에서 다시 들어와 주세요.','err'); return; }
+    $('badge').textContent = 'Q' + Q.quarter;
+    $('pickQ').textContent = Q.label;
+    $('showDate').textContent = dateLine(Q);
+    if(!Q.upload_open){
+      $('names').innerHTML = '';
+      say($('pickMsg'), Q.label + ' 는 지금 채울 수 없어요. 관리자에게 열어달라고 해주세요.', 'err');
+      return;
+    }
+    const { data, error } = await sb.from('wall')
+      .select('id,name,title,music,url,pos,order_index,hidden')
+      .eq('year', Q.year).eq('quarter', Q.quarter).order('order_index', { ascending: true });
+    if(error) throw error;
+    ROWS = (data || []).filter(r => !r.hidden);
+    renderNames();
+  }catch(err){
+    console.error(err);
+    say($('pickMsg'),'불러오지 못했어요: ' + (err.message || err),'err');
+  }
+}
+
+function renderNames(){
+  const box = $('names'); box.innerHTML = '';
+  if(!ROWS.length){ say($('pickMsg'),'이 분기에는 아직 사진이 없어요.','err'); return; }
+  ROWS.forEach(r=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    const th = document.createElement('span');
+    th.className = 'th'; th.style.backgroundImage = bgUrl(r.url); th.style.backgroundPosition = r.pos || 'center';
+    const nm = document.createElement('span'); nm.textContent = r.name || '이름 없음';
+    const st = document.createElement('span');
+    const filled = !!(r.title || '').trim();
+    st.className = 'st' + (filled ? ' done' : ''); st.textContent = filled ? '채움' : '비어 있음';
+    b.append(th, nm, st);
+    b.onclick = ()=>openShot(r);
+    box.appendChild(b);
+  });
+}
+
+function openShot(r){
+  CUR = r;
+  $('showPhoto').style.backgroundImage = bgUrl(r.url);
+  $('showPhoto').style.backgroundPosition = r.pos || 'center';
+  const cap = $('showCap');
+  cap.textContent = (r.title || '').trim() || '제목을 붙여주세요';
+  cap.classList.toggle('empty', !(r.title || '').trim());
+  $('showWho').textContent = Q.label + '에 ' + (r.name || '') + ' 님이 남긴 한 장이에요. 제목과 음악을 더하면 기록이 완성돼요.';
+  $('goFill').textContent = (r.title || '').trim() ? '고치러 가기' : '채우러 가기';
+  show('stepShow');
+}
+
+/* ---- 3단계 ---- */
+const inTitle = $('inTitle'), inMusic = $('inMusic'), note = $('musicNote'), save = $('save');
+let MUSIC = { vid:null, state:null };
+
+inTitle.addEventListener('input', ()=>{ $('count').textContent = inTitle.value.length + ' / 30'; });
+[['fTitle',inTitle],['fMusic',inMusic]].forEach(([wrapId,inp])=>{
+  inp.addEventListener('focus',()=>$(wrapId).classList.add('focus'));
+  inp.addEventListener('blur',()=>$(wrapId).classList.remove('focus'));
+});
+
+function setNote(text, kind){ note.textContent = text; note.className = 'musicNote' + (kind ? ' ' + kind : ''); }
+/* 성인 인증·퍼가기 금지 곡은 발표 화면에서 안 나온다 → 올리기 전에 알려준다 */
+let musicTimer = null;
+inMusic.addEventListener('input', ()=>{
+  clearTimeout(musicTimer);
+  MUSIC = { vid:null, state:null };
+  const link = inMusic.value.trim();
+  if(!link){ setNote('',''); return; }
+  const vid = QD.parseVid(link);
+  if(!vid){ setNote('유튜브 링크가 아닌 것 같아요.','warn'); return; }
+  setNote('곡을 확인하는 중…','');
+  musicTimer = setTimeout(async ()=>{
+    const state = await QD.checkPlayable(vid);
+    MUSIC = { vid, state };
+    if(state === 'ok') setNote('발표 화면에서 재생돼요.','ok');
+    else if(state === 'blocked') setNote('이 곡은 발표 화면에서 재생되지 않아요(연령 확인·퍼가기 금지). 다른 링크를 권해요.','warn');
+    else if(state === 'missing' || state === 'invalid') setNote('영상을 찾지 못했어요. 링크를 확인해 주세요.','warn');
+    else setNote('확인하지 못했어요. 그대로 올려도 괜찮아요.','');
+  }, 500);
+});
+
+$('goFill').onclick = ()=>{
+  $('formWho').textContent = (CUR.name || '') + ' 님';
+  inTitle.value = CUR.title || ''; $('count').textContent = inTitle.value.length + ' / 30';
+  inMusic.value = CUR.music || ''; MUSIC = { vid:null, state:null }; setNote('','');
+  say($('formMsg'),'','');
+  show('stepForm');
+  setTimeout(()=>inTitle.focus(), 120);
+};
+$('backPick').onclick = ()=>show('stepPick');
+$('backShow').onclick = ()=>show('stepShow');
+$('doneMore').onclick = ()=>{ renderNames(); show('stepPick'); };
+
+$('form').addEventListener('submit', async e=>{
+  e.preventDefault();
+  if(!CUR || save.disabled) return;
+  const title = inTitle.value.trim(), music = inMusic.value.trim();
+  if(!title && !music){ say($('formMsg'),'제목이나 음악 중 하나는 채워주세요.','err'); return; }
+  if(MUSIC.state === 'blocked' && !confirm('이 곡은 발표 화면에서 재생되지 않아요.\n그래도 이 링크로 저장할까요?')) return;
+  save.disabled = true; say($('formMsg'),'저장하는 중…','ok');
+  try{
+    const sb = await QD.sb();
+    const { data, error } = await sb.rpc('fill_entry', { p_id: CUR.id, p_title: title, p_music: music });
+    if(error) throw error;
+    if(!data){ say($('formMsg'),'지금은 고칠 수 없는 분기예요.','err'); save.disabled = false; return; }
+    CUR.title = title; CUR.music = music;
+    $('donePhoto').style.backgroundImage = bgUrl(CUR.url);
+    $('donePhoto').style.backgroundPosition = CUR.pos || 'center';
+    $('doneCap').textContent = title || CUR.name;
+    $('doneSong').textContent = music ? '♪ 음악도 담겼어요' : '';
+    say($('formMsg'),'','');
+    save.disabled = false;
+    show('stepDone');
+  }catch(err){
+    console.error(err);
+    say($('formMsg'),'저장하지 못했어요: ' + (err.message || err),'err');
+    save.disabled = false;
+  }
+});
+
+start();
+</script>
+</body>
+</html>
