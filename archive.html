@@ -37,6 +37,24 @@ h1 em{display:block;font-style:normal;font-size:13px;font-weight:700;color:var(-
 h2{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink);
   margin:48px 0 16px;padding-bottom:11px;border-bottom:1px solid var(--line);}
 
+/* ---- PC(넓은 화면) 구성: 본문을 넓히고, 분기별·사람별을 탭으로 나눠 한 번에 하나만 본다.
+   예전엔 PC에서도 가운데 760px만 써서 이름 11개가 한 줄에 못 들어가 둘째 줄로 떨어졌다. 휴대폰은 그대로 ---- */
+.tabs{display:none;}
+@media (min-width:1000px){
+  .wrap{max-width:1120px;}
+  .tabs{display:flex;gap:4px;margin:40px 0 26px;border-bottom:1px solid var(--line);}
+  .tab{font-family:inherit;font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink-soft);
+    background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:11px 20px;cursor:pointer;
+    transition:color .16s,border-color .16s;}
+  .tab:hover{color:var(--ink);}
+  .tab.on{color:var(--mint);border-bottom-color:var(--mint);}
+  .tab:focus-visible{outline:2px solid var(--mint);outline-offset:2px;border-radius:3px;}
+  .pane{display:none;}
+  .pane.on{display:block;}
+  .pane > h2{display:none;}                      /* 탭 이름이 제목 역할을 한다 */
+  .shots{grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:16px;}   /* 1120px 에서 한 줄 6장 */
+}
+
 /* ---- 분기 카드 ---- */
 .qs{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px;}
 .q{display:block;text-decoration:none;color:inherit;background:var(--panel);
@@ -88,13 +106,23 @@ h2{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink);
   <h1><em id="range">보관함</em>지나온 분기를<br>다시 꺼내 봅니다.</h1>
   <p class="lead">분기를 고르면 그때 그 발표를 그대로 다시 재생합니다.<br>아래에서는 한 사람이 분기마다 남긴 장면을 이어서 볼 수 있어요.</p>
 
-  <h2>분기별</h2>
-  <div class="qs" id="quarters"><div class="note">불러오는 중…</div></div>
+  <!-- 넓은 화면(PC)에서만 보이는 탭. 휴대폰에서는 숨기고 두 구역을 지금처럼 위아래로 다 보여준다 -->
+  <div class="tabs" id="tabs" role="tablist" aria-label="보관함 보기 방식">
+    <button class="tab on" type="button" role="tab" id="tabQ" aria-controls="paneQ" aria-selected="true">분기별</button>
+    <button class="tab" type="button" role="tab" id="tabP" aria-controls="paneP" aria-selected="false">사람별</button>
+  </div>
 
-  <h2>사람별</h2>
-  <div class="chips" id="chips"></div>
-  <div class="shots" id="shots"></div>
-  <div class="note" id="shotsNote" style="display:none"></div>
+  <section class="pane on" id="paneQ" role="tabpanel" aria-labelledby="tabQ">
+    <h2>분기별</h2>
+    <div class="qs" id="quarters"><div class="note">불러오는 중…</div></div>
+  </section>
+
+  <section class="pane" id="paneP" role="tabpanel" aria-labelledby="tabP">
+    <h2>사람별</h2>
+    <div class="chips" id="chips"></div>
+    <div class="shots" id="shots"></div>
+    <div class="note" id="shotsNote" style="display:none"></div>
+  </section>
 
   <div class="foot">기획자의 독서</div>
 </main>
@@ -238,6 +266,21 @@ async function start(){
   }
 }
 start();
+</script>
+<script>
+/* PC 탭: 분기별 | 사람별. 고른 탭은 이 탭(창)을 닫기 전까지 기억해서, 발표를 보고 돌아와도 그대로다 */
+(function(){
+  const tabs=[...document.querySelectorAll('#tabs .tab')];
+  const KEY='qd_archive_tab';
+  function pick(id){
+    tabs.forEach(t=>{ const on=(t.id===id); t.classList.toggle('on',on); t.setAttribute('aria-selected',on?'true':'false');
+      document.getElementById(t.getAttribute('aria-controls')).classList.toggle('on',on); });
+    try{ sessionStorage.setItem(KEY,id); }catch(_){ /* 저장 못 해도 탭은 동작한다 */ }
+  }
+  tabs.forEach(t=>t.addEventListener('click',()=>pick(t.id)));
+  let saved=null; try{ saved=sessionStorage.getItem(KEY); }catch(_){}
+  if(saved && tabs.some(t=>t.id===saved)) pick(saved);
+})();
 </script>
 </body>
 </html>
