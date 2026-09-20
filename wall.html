@@ -106,14 +106,15 @@ body.shooting .spot{opacity:1;width:126%;}
   background:linear-gradient(180deg,#fafaf7,#f1f0eb);font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;}
 .print .caption .q{font-size:13px;letter-spacing:.01em;font-weight:700;color:#3a352e;}
 .print .caption .d{font-size:9px;letter-spacing:.18em;color:#9a938a;}
-/* 토출: 밀려나오다 마지막 160ms 에 한 번 '툭' 걸리며 안착한다(09-20 시안 '가').
-   예전엔 1.25초 linear 라 기계가 아니라 스티커가 미끄러지는 느낌이었다 */
+/* 토출: 밀려나오다 마지막 190ms 에 한 번 '툭' 걸리며 안착한다(09-20 시안 '가').
+   예전엔 1.25초 linear 라 기계가 아니라 스티커가 미끄러지는 느낌이었다.
+   1.05초로 줄였더니 "급해 보인다"(사용자 09-20) → 길이는 원래대로 1.25초, 안착만 남김 */
 @keyframes eject{
   0%{transform:translateY(-100%);animation-timing-function:var(--ease-move);}
   85%{transform:translateY(1.5%);animation-timing-function:var(--ease-in);}
   100%{transform:translateY(0%);}}
 @keyframes ejectLight{from{filter:brightness(1);}to{filter:brightness(1.03);}}   /* 슬롯 그늘에서 빛으로 */
-.print.ejecting{animation:eject 1.05s forwards, ejectLight .4s ease-out forwards;}
+.print.ejecting{animation:eject 1.25s forwards, ejectLight .55s ease-out forwards;}
 .freeprint{position:fixed;z-index:6;transform:translateX(-50%);transform-origin:top center;
   transition:top .5s cubic-bezier(.34,1.2,.64,1);}
 .freeprint .print{position:relative;transform:none !important;}
@@ -320,7 +321,7 @@ body.wall-mobile #dateImprint{display:none;}
   display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
 .modal-photo .cap .d{font-size:12px;font-weight:400;color:#9a938a;letter-spacing:.16em;}
 /* music control row */
-.music{margin-top:16px;display:flex;align-items:center;justify-content:center;gap:12px;}
+.music{margin-top:26px;display:flex;align-items:center;justify-content:center;gap:12px;}
 .music button{display:flex;align-items:center;gap:10px;cursor:pointer;
   padding:12px 22px;border-radius:2px;background:transparent;border:1px solid rgba(143,201,188,.55);color:var(--mint-soft);
   font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;font-size:12px;font-weight:700;letter-spacing:.02em;
@@ -359,7 +360,7 @@ body.aim-hide, body.aim-hide *, body.cine:not(.popup), body.cine:not(.popup) *{c
    사진이 그 왼쪽에 붙어 가운데서 83px 밀렸다 → 글자 줄은 폭 계산에서 빼고(width:0) 카드 폭만큼만 채운다 */
 .reveal{opacity:0;transform:translateY(8px);transition:opacity .7s ease, transform .7s ease;width:0;min-width:100%;}
 .reveal.show{opacity:1;transform:none;}
-.byline{text-align:center;margin-top:18px;
+.byline{text-align:center;margin-top:22px;
   font-family:'NanumSquareNeo','Helvetica Neue',sans-serif;
   color:#e8e4dc;line-height:1.5;}
 .byline .line1{font-size:16px;font-weight:800;letter-spacing:.02em;color:#e8e4dc;}
@@ -382,6 +383,12 @@ body.aim-hide, body.aim-hide *, body.cine:not(.popup), body.cine:not(.popup) *{c
 .np .eq.on i:nth-child(2){animation-delay:.3s;}
 .np .eq.on i:nth-child(3){animation-delay:.6s;}
 @keyframes eqBar{0%,100%{transform:scaleY(.3);}50%{transform:scaleY(1);}}
+/* 곡 제목은 재생을 누른 뒤에 아래에서 떠오른다 — 이름 공개와 같은 결(09-20 요청).
+   글자 꼬리가 잘리지 않게 아래쪽만 여유를 주고 그만큼 도로 당긴다 */
+.np .tw{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:3px;margin-bottom:-3px;}
+.np .tw .ttl{display:inline-block;}
+.np .tw.rise .ttl{animation:npRise 1s var(--ease-in) both;}
+@keyframes npRise{from{transform:translateY(108%);opacity:0;}60%{opacity:1;}to{transform:none;opacity:1;}}
 /* 동작 줄이기(#23): 발표의 핵심 연출(토출·모프·현상)은 기기 설정과 무관하게 그대로 보여준다.
    대신 '끝없이 반복되는' 움직임만 끈다 — 멀미를 일으키는 건 계속 도는 쪽이고,
    한 번 지나가는 연출은 내용 전달에 필요하다. 규칙은 스타일 맨 끝 @media 에 모아 뒀다. */
@@ -436,6 +443,7 @@ body.cine:not(.popup) #roll{opacity:0;pointer-events:none;}          /* 셔터 �
   .modal-photo .cap .q{font-size:19px;}
   .byline .line1{font-size:20px;}
   .byline .tag{font-size:15px;}
+  .music{margin-top:34px;}          /* 글자가 커진 만큼 버튼도 더 떼어 놓는다 */
   .music button{font-size:14px;padding:13px 24px;}
   .np{font-size:13px;}
   .counter{font-size:13px;}
@@ -454,6 +462,7 @@ body.cine .eyebrow, body.cine .counter, body.cine .qd-nav, body.popup .qd-nav{op
   .pinned.hanging{animation:none;}              /* 벽 사진 흔들림 */
   .who-blank{animation:none;}                   /* 이름 빈칸 밑줄 깜빡임 */
   .np .eq.on i{animation:none;transform:scaleY(.62);}  /* 음악 막대 */
+  .np .tw.rise .ttl{animation:none;}                   /* 곡 제목은 떠오르지 않고 바로 */
 }
 </style>
 </head>
@@ -683,7 +692,7 @@ window.onYouTubeIframeAPIReady=function(){
       onStateChange:(e)=>{
         if(e.data===YT.PlayerState.PLAYING){ytPlaying=true;setMusicUI(true);
           const t=ytPlayer.getVideoData&&ytPlayer.getVideoData().title;
-          setNowPlaying(t||'재생 중', true);}
+          setNowPlaying(t||ytTitleCache[currentVid]||'재생 중', true, true);}
         else if(e.data===YT.PlayerState.PAUSED||e.data===YT.PlayerState.ENDED){ytPlaying=false;setMusicUI(false);}
       },
       // 성인 인증·퍼가기 금지 곡은 유튜브가 오류(101/150)를 주고 재생을 막는다.
@@ -714,13 +723,16 @@ function setMusicUI(playing){
 }
 /* 곡 이름 앞에 작은 막대 세 개(재생 중이면 움직인다). 곡 제목은 유튜브에서 온 글자라
    textContent 로만 넣는다 — innerHTML 로 넣으면 제목 안의 꺾쇠가 화면을 깨뜨린다 */
-function setNowPlaying(text, playing){
+function setNowPlaying(text, playing, rise){
   nowPlaying.innerHTML='';
   const eq=document.createElement('span');
   eq.className='eq'+(playing?' on':'');
   eq.innerHTML='<i></i><i></i><i></i>';
   nowPlaying.appendChild(eq);
-  if(text) nowPlaying.appendChild(document.createTextNode(text));
+  if(!text) return;
+  const tw=document.createElement('span'); tw.className='tw'+(rise?' rise':'');
+  const ttl=document.createElement('span'); ttl.className='ttl'; ttl.textContent=text;
+  tw.appendChild(ttl); nowPlaying.appendChild(tw);
 }
 // 여기서 재생이 막힌 곡 — 버튼을 '유튜브에서 듣기'로 바꿔 새 창으로 연다
 const blockedVids=new Set();
@@ -733,16 +745,18 @@ function showBlocked(){
 const ytTitleCache={};
 let ytTitleReq=0;
 function showTrackTitle(link, vid){
-  setNowPlaying('', false);
+  // 곡 제목은 '음악 재생'을 누른 뒤에 보여준다(09-20). 여기서는 미리 받아만 둔다
+  nowPlaying.innerHTML='';
   if(!link) return;
   if(blockedVids.has(vid)){ showBlocked(); return; }
   const my=++ytTitleReq;
-  if(ytTitleCache[vid]!==undefined){ setNowPlaying(ytTitleCache[vid], ytPlaying); return; }
+  if(ytTitleCache[vid]!==undefined) return;
   const url='https://www.youtube.com/oembed?format=json&url='+encodeURIComponent('https://www.youtube.com/watch?v='+vid);
   fetch(url).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
     const t=(d&&d.title)?d.title:'';
     ytTitleCache[vid]=t;
-    if(my===ytTitleReq && currentVid===vid && t) setNowPlaying(t, ytPlaying);
+    // 받아 두기만 한다 — 이미 재생 중이면 그때 제목만 갈아 끼운다
+    if(my===ytTitleReq && currentVid===vid && t && ytPlaying) setNowPlaying(t, true, false);
   }).catch(()=>{ /* 제목 못 가져오면 막대만 남긴다 */ });
 }
 function openModal(fi, captureMode, morphFrom){
