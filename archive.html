@@ -187,6 +187,8 @@ function newestPerMemberPerQuarter(rows){
 function thumb(url){ return url ? "url('" + String(url).replace(/['"\\]/g,'') + "')" : ''; }
 /* 올린 사람이 맞춰 둔 초점(pos)을 미리보기에서도 그대로 쓴다 — 발표 화면과 다르게 잘리지 않도록 */
 function focus(r){ return String(r.pos || '50% 50%').replace(/['"\\;]/g,''); }
+/* 제목·이름은 멤버가 직접 넣은 글자라 화면에 넣기 전에 꺾쇠를 막는다 */
+function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ---- 분기 카드 ---- */
 function renderQuarters(){
@@ -267,12 +269,13 @@ function renderShots(memberId){
   mine.forEach(r=>{
     const d=document.createElement('div'); d.className='shot';
     const yt = r.music
-      ? '<a class="yt" href="'+String(r.music).replace(/"/g,'&quot;')+'" target="_blank" rel="noopener">음악 들으러 가기 →</a>'
+      ? '<a class="yt" href="'+esc(r.music)+'" target="_blank" rel="noopener">음악 들으러 가기 →</a>'
       : '';
     d.innerHTML =
       '<span class="ph" style="background-image:'+thumb(r.url)+';background-position:'+focus(r)+'"></span>' +
       '<div class="tx"><div class="qq">'+r.year+' · Q'+r.quarter+'</div>' +
-      '<div class="tt">'+ (r.title||'제목 없음') +'</div>' + yt + '</div>';
+      // 제목을 아직 안 채운 기록은 '제목 없음' 대신 누구의 어느 분기인지로 채운다
+      '<div class="tt">'+ esc(r.title || ((r.name||'') + '님의 ' + r.quarter + '분기 쿼터 다이어리')) +'</div>' + yt + '</div>';
     elShots.appendChild(d);
   });
 }
