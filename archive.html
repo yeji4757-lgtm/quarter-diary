@@ -65,6 +65,13 @@ h2{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink);
   border:1px dashed rgba(143,201,188,.35);border-radius:5px;transition:background .18s,border-color .18s;}
 .fill-link:hover,.fill-link:focus-visible{background:rgba(143,201,188,.08);border-color:rgba(143,201,188,.6);outline:none;}
 .fill-link b{font-weight:700;}
+.qlinks{display:flex;flex-direction:column;gap:6px;margin-top:7px;}
+.qlinks > *{margin-top:0;}
+/* 연출을 건너뛰고 사진 벽부터 보는 길. 카드(발표 다시보기)보다 조용하게 */
+.wall-link{display:block;padding:9px 6px;text-align:center;text-decoration:none;
+  font-size:11.5px;font-weight:500;letter-spacing:.02em;color:var(--ink-soft);
+  border:1px solid var(--line);border-radius:5px;transition:color .18s,border-color .18s;}
+.wall-link:hover,.wall-link:focus-visible{color:var(--ink);border-color:#3c4145;outline:none;}
 
 /* ---- 사람별 ---- */
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;}
@@ -217,19 +224,33 @@ function renderQuarters(){
       (shots.length ? '<div class="strip">' + strip + more + '</div>' : '') +
       '<div class="go">' + (shots.length ? '발표 다시보기 →' : '준비 중') + '</div>';
 
-    // 지난 분기인데 제출이 열려 있으면 = 제목·음악을 채워 넣는 중인 분기
-    // (지금 분기는 업로드 페이지에서 올리면서 같이 쓰니까 여기 링크를 안 붙인다)
-    const filling = q.upload_open && !q.is_current && shots.length;
-    if(!filling){ elQuarters.appendChild(a); return; }
+    if(!shots.length){ elQuarters.appendChild(a); return; }
 
+    // 카드 자체는 '발표 다시보기'(카메라 연출부터) 링크라, 나머지 길은 카드 밖에 둔다
     const wrap = document.createElement('div');
     wrap.className = 'qwrap';
-    const fill = document.createElement('a');
-    fill.className = 'fill-link';
-    fill.href = 'fill.html?y=' + q.year + '&q=' + q.quarter;
-    const blank = shots.filter(r => !(r.title || '').trim()).length;
-    fill.textContent = blank ? '제목·음악 채우기 · ' + blank + '자리 비어 있어요' : '제목·음악 고치기';
-    wrap.append(a, fill);
+    const links = document.createElement('div');
+    links.className = 'qlinks';
+
+    // 지난 분기인데 제출이 열려 있으면 = 제목·음악을 채워 넣는 중인 분기
+    // (지금 분기는 업로드 페이지에서 올리면서 같이 쓰니까 여기 링크를 안 붙인다)
+    if(q.upload_open && !q.is_current){
+      const fill = document.createElement('a');
+      fill.className = 'fill-link';
+      fill.href = 'fill.html?y=' + q.year + '&q=' + q.quarter;
+      const blank = shots.filter(r => !(r.title || '').trim()).length;
+      fill.textContent = blank ? '제목·음악 채우기 · ' + blank + '자리 비어 있어요' : '제목·음악 고치기';
+      links.appendChild(fill);
+    }
+
+    // 연출 없이 사진 벽만 보고 싶을 때 (#wall 이 카메라·셔터를 건너뛴다)
+    const wall = document.createElement('a');
+    wall.className = 'wall-link';
+    wall.href = 'wall.html?y=' + q.year + '&q=' + q.quarter + '#wall';
+    wall.textContent = '전체 사진 보기 · ' + shots.length + '장';
+    links.appendChild(wall);
+
+    wrap.append(a, links);
     elQuarters.appendChild(wrap);
   });
 }

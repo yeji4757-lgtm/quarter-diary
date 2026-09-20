@@ -55,6 +55,11 @@ h1 em{display:block;font-style:normal;font-size:11px;font-weight:800;letter-spac
 .polar figcaption{padding:13px 4px 16px;text-align:center;font-size:14px;font-weight:800;color:#2a2622;
   word-break:keep-all;line-height:1.4;}
 .polar figcaption.empty{color:#a8a29a;font-weight:500;}
+/* 사진 끌어서 위치 맞추기 — 업로드 페이지의 조작을 그대로 가져왔다 */
+#showPhoto{cursor:grab;touch-action:none;}
+#showPhoto.dragging{cursor:grabbing;}
+.drag-hint{margin-top:12px;text-align:center;font-size:11.5px;letter-spacing:.02em;color:var(--ink-faint);}
+.drag-hint.moved{color:var(--mint);}
 
 /* 3단계 — 채우기 */
 #form{margin-top:30px;}
@@ -123,9 +128,12 @@ h1 em{display:block;font-style:normal;font-size:11px;font-weight:800;letter-spac
       <div class="p" id="showPhoto" role="img" aria-label="그날 남긴 사진"></div>
       <figcaption id="showCap" class="empty">제목을 붙여주세요</figcaption>
     </figure>
+    <p class="drag-hint" id="dragHint">사진을 끌면 보이는 자리를 옮길 수 있어요</p>
     <p class="sub" id="showWho"></p>
     <button type="button" class="submit" id="goFill">채우러 가기</button>
+    <button type="button" class="ghost" id="posSave" hidden>이 위치로 저장하기</button>
     <button type="button" class="ghost" id="backPick">다른 사람 고르기</button>
+    <div class="msg" id="showMsg"></div>
   </section>
 
   <!-- 3단계: 제목·음악 -->
@@ -237,8 +245,65 @@ function openShot(r){
   cap.classList.toggle('empty', !(r.title || '').trim());
   $('showWho').textContent = Q.label + '에 ' + (r.name || '') + ' 님이 남긴 한 장이에요. 제목과 음악을 더하면 기록이 완성돼요.';
   $('goFill').textContent = (r.title || '').trim() ? '고치러 가기' : '채우러 가기';
+  const p = String(r.pos || '50% 50%').split(' ').map(parseFloat);
+  posX = isNaN(p[0]) ? 50 : p[0]; posY = isNaN(p[1]) ? 50 : p[1];
+  applyPos(); resetPosUI();
   show('stepShow');
 }
+
+/* ---- 2단계: 사진 끌어서 위치 맞추기 ---- */
+let posX = 50, posY = 50, moved = false;
+const photoEl = $('showPhoto');
+const clampPos = v => Math.max(0, Math.min(100, v));
+function applyPos(){ photoEl.style.backgroundPosition = posX.toFixed(1) + '% ' + posY.toFixed(1) + '%'; }
+function resetPosUI(){
+  moved = false;
+  $('posSave').hidden = true;
+  $('dragHint').textContent = '사진을 끌면 보이는 자리를 옮길 수 있어요';
+  $('dragHint').classList.remove('moved');
+  say($('showMsg'),'','');
+}
+let dragging = false, sx = 0, sy = 0, spx = 50, spy = 50;
+photoEl.addEventListener('pointerdown', e=>{
+  dragging = true; photoEl.classList.add('dragging'); photoEl.setPointerCapture(e.pointerId);
+  sx = e.clientX; sy = e.clientY; spx = posX; spy = posY;
+});
+photoEl.addEventListener('pointermove', e=>{
+  if(!dragging) return;
+  const r = photoEl.getBoundingClientRect();
+  posX = clampPos(spx - (e.clientX - sx) / r.width * 100);
+  posY = clampPos(spy - (e.clientY - sy) / r.height * 100);
+  applyPos();
+  if(!moved){
+    moved = true;
+    $('posSave').hidden = false;
+    $('dragHint').textContent = '마음에 드는 자리에서 아래 버튼을 눌러주세요';
+    $('dragHint').classList.add('moved');
+  }
+});
+function endDrag(){ dragging = false; photoEl.classList.remove('dragging'); }
+photoEl.addEventListener('pointerup', endDrag);
+photoEl.addEventListener('pointercancel', endDrag);
+
+$('posSave').onclick = async ()=>{
+  if(!CUR) return;
+  const pos = posX.toFixed(1) + '% ' + posY.toFixed(1) + '%';
+  $('posSave').disabled = true; say($('showMsg'),'저장하는 중…','ok');
+  try{
+    const sb = await QD.sb();
+    const { data, error } = await sb.rpc('fill_pos', { p_id: CUR.id, p_pos: pos });
+    if(error) throw error;
+    if(!data){ say($('showMsg'),'지금은 고칠 수 없는 분기예요.','err'); $('posSave').disabled = false; return; }
+    CUR.pos = pos;
+    resetPosUI();
+    say($('showMsg'),'이 자리로 저장했어요.','ok');
+    renderNames();                       // 이름 목록의 작은 사진에도 바로 반영
+  }catch(err){
+    console.error(err);
+    say($('showMsg'),'저장하지 못했어요: ' + (err.message || err),'err');
+  }
+  $('posSave').disabled = false;
+};
 
 /* ---- 3단계 ---- */
 const inTitle = $('inTitle'), inMusic = $('inMusic'), note = $('musicNote'), save = $('save');
