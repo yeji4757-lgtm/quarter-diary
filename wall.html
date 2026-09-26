@@ -1286,6 +1286,32 @@ function showPreviewBadge(){
   document.body.appendChild(b);
 }
 
+/* 발표 시각에 관리자가 '발표 공개'를 켜면, 미리 열어둔 사람 화면도 저절로 바뀌게 한다.
+   이 페이지는 실시간 구독이 없고 열 때 한 번만 조회해서, 예전엔 새로고침을 해야 했다.
+   - 30초마다 그 분기만 다시 본다(사진은 안 읽는다. 공개 전엔 DB 규칙이 내주지도 않는다)
+   - 보이지 않는 탭에서는 쉬고, 다시 보는 순간 즉시 한 번 확인한다(발표 시각에 탭을 되돌아오는 경우)
+   - 3시간이 지나면 멈춘다 — 켜 둔 채 잊은 탭이 하루 종일 두드리지 않도록 */
+let openWatch=null;
+function watchForOpen(year, quarter){
+  if(openWatch) return;
+  let left=360;                                   // 30초 × 360 = 3시간
+  const check=async()=>{
+    if(document.hidden) return;
+    if(left-- <= 0){ stop(); return; }
+    try{
+      const q=await QD.getQuarter(year, quarter);
+      if(q && q.wall_open){ stop(); location.reload(); }
+    }catch(_){ /* 잠깐 끊긴 것뿐일 수 있으니 다음 차례에 다시 본다 */ }
+  };
+  const onVisible=()=>{ if(!document.hidden) check(); };
+  function stop(){
+    clearInterval(openWatch); openWatch=null;
+    document.removeEventListener('visibilitychange', onVisible);
+  }
+  openWatch=setInterval(check, 30000);
+  document.addEventListener('visibilitychange', onVisible);
+}
+
 async function loadRoll(){
   const loading=document.createElement('div');
   loading.textContent='사진 불러오는 중…';
@@ -1305,7 +1331,8 @@ async function loadRoll(){
     if(!Q.wall_open){
       const { data:ses } = await sb.auth.getSession();
       if(!(ses && ses.session)){
-        showEmpty(Q.label + ' 발표는 아직 공개 전이에요.<br>공개되면 이 주소에서 볼 수 있어요.');
+        showEmpty(Q.label + ' 발표는 아직 공개 전이에요.<br>공개되면 이 화면이 저절로 바뀌어요.');
+        watchForOpen(Q.year, Q.quarter);
         return;
       }
       showPreviewBadge();
