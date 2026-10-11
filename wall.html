@@ -903,15 +903,17 @@ let closing=false;
 let musicFadeToken=0;
 let musicLoadTimer=null;
 // 음악은 뚝 끊지 않고 약 0.6초에 걸쳐 작아지며 멈춘다. 그 사이 다른 곡을 누르면 즉시 취소된다.
+// 줌 '소리 공유'로 내보내면 컴퓨터 볼륨과 상관없이 크게 나간다(10-11 발표 중 제보) → 플레이어 자체 음량을 낮춘다
+const MUSIC_VOL=35;
 function fadeOutMusic(){
   if(!(ytPlayer&&ytReady)) return;
   const my=++musicFadeToken;
-  if(!ytPlaying){ try{ ytPlayer.stopVideo(); ytPlayer.setVolume(100); }catch(_){} return; }
+  if(!ytPlaying){ try{ ytPlayer.stopVideo(); ytPlayer.setVolume(MUSIC_VOL); }catch(_){} return; }
   let v=100; try{ v=ytPlayer.getVolume(); }catch(_){}
   const step=()=>{
     if(my!==musicFadeToken) return;
     v-=14;
-    if(v<=0){ try{ ytPlayer.stopVideo(); ytPlayer.setVolume(100); }catch(_){} return; }
+    if(v<=0){ try{ ytPlayer.stopVideo(); ytPlayer.setVolume(MUSIC_VOL); }catch(_){} return; }
     try{ ytPlayer.setVolume(v); }catch(_){}
     setTimeout(step,75);
   };
@@ -1118,7 +1120,7 @@ musicBtn.addEventListener('click',()=>{
   if(!currentVid) return;
   if(blockedVids.has(currentVid)){ window.open(QD.watchUrl(currentVid),'_blank','noopener'); return; }
   if(!ytReady||!ytPlayer){ nowPlaying.textContent='플레이어 준비 중…'; return; }
-  if(ytPlaying){ musicFadeToken++; try{ ytPlayer.setVolume(100); }catch(_){} ytPlayer.pauseVideo(); return; }
+  if(ytPlaying){ musicFadeToken++; try{ ytPlayer.setVolume(MUSIC_VOL); }catch(_){} ytPlayer.pauseVideo(); return; }
   playCurrentMusic();
 });
 /* 지금 사진의 곡을 튼다. 버튼으로도, 사진이 다 나올 때 저절로도 부른다.
@@ -1126,7 +1128,7 @@ musicBtn.addEventListener('click',()=>{
 function playCurrentMusic(){
   if(!currentVid || !ytReady || !ytPlayer) return;
   if(blockedVids.has(currentVid)) return;
-  musicFadeToken++; try{ ytPlayer.setVolume(100); }catch(_){}   // 이전 곡이 작아지던 중이면 멈추고 원래 볼륨으로
+  musicFadeToken++; try{ ytPlayer.setVolume(MUSIC_VOL); }catch(_){}   // 이전 곡이 작아지던 중이면 멈추고 원래 볼륨으로
   // load (or resume) the current video
   try{
     const cur=ytPlayer.getVideoData&&ytPlayer.getVideoData().video_id;
