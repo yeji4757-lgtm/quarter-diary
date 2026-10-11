@@ -385,7 +385,8 @@ body.aim-hide, body.aim-hide *, body.cine:not(.popup), body.cine:not(.popup) *{c
 @keyframes eqBar{0%,100%{transform:scaleY(.3);}50%{transform:scaleY(1);}}
 /* 곡 제목은 재생을 누른 뒤에 아래에서 떠오른다 — 이름 공개와 같은 결(09-20 요청).
    글자 꼬리가 잘리지 않게 아래쪽만 여유를 주고 그만큼 도로 당긴다 */
-.np .tw{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:3px;margin-bottom:-3px;}
+.np .tw{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:3px;margin-bottom:-3px;
+  margin-right:17px;}   /* 왼쪽 막대(폭 10 + 간격 7)만큼 오른쪽도 비워 글자가 버튼 한가운데 오게 (10-11) */
 .np .tw .ttl{display:inline-block;}
 .np .tw.rise .ttl{animation:npRise 1s var(--ease-in) both;}
 @keyframes npRise{from{transform:translateY(108%);opacity:0;}60%{opacity:1;}to{transform:none;opacity:1;}}
@@ -600,7 +601,9 @@ function ejectPrint(){
   // → 시간이 지나면 신호 없이도 한 번만 넘어가게 안전장치를 둔다. (필름 토출 1.25초 + 여유)
   let handedOff=false;
   const handOff=()=>{ if(handedOff) return; handedOff=true; clearTimeout(ejectFallback); detach(print,f); };
-  print.addEventListener('animationend',handOff,{once:true});
+  // 필름에는 애니메이션이 둘(나오기 1.25초 · 밝아지기 0.55초)이라 '나오기'가 끝난 신호만 듣는다.
+  // 예전엔 먼저 끝나는 밝아지기 신호에 넘어가서 필름이 0.55초 만에 끊기고 팝업이 떴다(10-11 발견)
+  print.addEventListener('animationend',e=>{ if(e.animationName==='eject') handOff(); });
   const ejectFallback=setTimeout(handOff,1700);
 }
 function detach(print,f){
@@ -635,6 +638,10 @@ function presentShot(free,f){
   const fr = free ? free.getBoundingClientRect() : null;
   openModal(idx, true, fr);   // captureMode = true, morph from fr
   if(free) free.remove();     // the card now overlays it; drop the print
+  // 사진이 토출구에서 다 나온 순간 음악도 같이 시작한다(10-11 요청).
+  // 셔터를 누른 클릭이 '사람의 조작'이라 브라우저가 소리 있는 재생을 허락한다.
+  // 막히면(재생 금지 곡 등) 지금처럼 '음악 재생' 버튼으로 틀면 된다
+  playCurrentMusic();
 }
 
 resetBtn.addEventListener('click',()=>{
@@ -1099,8 +1106,15 @@ musicBtn.addEventListener('click',()=>{
   if(!currentVid) return;
   if(blockedVids.has(currentVid)){ window.open(QD.watchUrl(currentVid),'_blank','noopener'); return; }
   if(!ytReady||!ytPlayer){ nowPlaying.textContent='플레이어 준비 중…'; return; }
+  if(ytPlaying){ musicFadeToken++; try{ ytPlayer.setVolume(100); }catch(_){} ytPlayer.pauseVideo(); return; }
+  playCurrentMusic();
+});
+/* 지금 사진의 곡을 튼다. 버튼으로도, 사진이 다 나올 때 저절로도 부른다.
+   준비가 안 됐거나 재생 금지 곡이면 조용히 넘어가고 '음악 재생' 버튼을 남겨 둔다 */
+function playCurrentMusic(){
+  if(!currentVid || !ytReady || !ytPlayer) return;
+  if(blockedVids.has(currentVid)) return;
   musicFadeToken++; try{ ytPlayer.setVolume(100); }catch(_){}   // 이전 곡이 작아지던 중이면 멈추고 원래 볼륨으로
-  if(ytPlaying){ ytPlayer.pauseVideo(); return; }
   // load (or resume) the current video
   try{
     const cur=ytPlayer.getVideoData&&ytPlayer.getVideoData().video_id;
@@ -1114,7 +1128,7 @@ musicBtn.addEventListener('click',()=>{
         nowPlaying.textContent='재생이 늦어요 · 음악 버튼을 한 번 더 눌러주세요';
     },8000);
   }catch(e){ nowPlaying.textContent='재생할 수 없습니다'; }
-});
+}
 modalClose.addEventListener('click',closeModal);
 // 현상 중(이름·음악이 뜨기 전)에는 배경 클릭·Esc 로 닫히지 않게 한다.
 // 예전엔 여기서 닫히면 이름·음악 공개 없이 다음 사람으로 넘어가고 되돌릴 수 없었다. (× 버튼은 그대로 닫힘)
