@@ -904,7 +904,7 @@ let musicFadeToken=0;
 let musicLoadTimer=null;
 // 음악은 뚝 끊지 않고 약 0.6초에 걸쳐 작아지며 멈춘다. 그 사이 다른 곡을 누르면 즉시 취소된다.
 // 줌 '소리 공유'로 내보내면 컴퓨터 볼륨과 상관없이 크게 나간다(10-11 발표 중 제보) → 플레이어 자체 음량을 낮춘다
-const MUSIC_VOL=35;
+const MUSIC_VOL=20;
 function fadeOutMusic(){
   if(!(ytPlayer&&ytReady)) return;
   const my=++musicFadeToken;
