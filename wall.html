@@ -328,7 +328,19 @@ body.wall-mobile #dateImprint{display:none;}
   transition:background .2s ease,color .2s ease,border-color .2s ease;}
 .music button:hover{background:var(--mint-ink);border-color:var(--mint-ink);color:#fff;}
 .music button:active{transform:scale(.97);}
-.music .ico{width:14px;height:14px;display:inline-block;}
+/* 재생·일시정지 아이콘은 글자(▶ ❚❚) 대신 도형으로 그린다 — 글자는 폰트마다 크기·높이가 달라
+   '일시정지' 글자보다 작고 아래로 처져 보였다(10-11). 크기는 글자 크기(em)에 맞춰 함께 커진다 */
+.music .ico{position:relative;flex:none;display:inline-block;width:.8em;height:.93em;
+  transform:translateY(-.04em);}   /* 한글 글자 몸통 높이·중심에 맞춤(재서 맞춘 값) */
+.music .ico::before,.music .ico::after{content:"";position:absolute;top:0;bottom:0;background:currentColor;}
+.music .ico.play::before{left:0;right:0;clip-path:polygon(0 0,100% 50%,0 100%);}
+.music .ico.play::after{display:none;}
+/* 막대 굵기는 원래 글자 ❚❚ 와 같게(5px). 비율(%)로 잡으면 픽셀이 반쪽씩 걸려 두 막대 굵기가 4px·3px 로 달라졌다 */
+.music .ico.pause{width:12px;}
+.music .ico.pause::before{left:0;width:5px;}
+.music .ico.pause::after{left:7px;width:5px;}
+.music .ico.out{width:auto;height:auto;}                 /* 유튜브에서 듣기: ↗ 글자 그대로 */
+.music .ico.out::before,.music .ico.out::after{display:none;}
 /* PC: 프레임 바깥 우측 상단, 배경 없이 × 만 */
 /* 닫기(×): 카드 우상단 위 여백에 붙여 항상 어두운 배경 위에 뜨게(프레임에 안 가림).
    옅은 회색으로 은은하게, 터치 영역 넉넉히. PC·모바일 동일. */
@@ -504,7 +516,7 @@ body.cine .eyebrow, body.cine .counter, body.cine .qd-nav, body.popup .qd-nav{op
     <div class="reveal" id="revealBlock">
       <div class="byline" id="modalName"></div>
       <div class="music">
-        <button id="musicBtn"><span class="ico" id="musicIco">▶</span><span id="musicLabel">음악 재생</span></button>
+        <button id="musicBtn"><span class="ico play" id="musicIco" aria-hidden="true"></span><span id="musicLabel">음악 재생</span></button>
       </div>
       <div class="np" id="nowPlaying"></div>
     </div>
@@ -723,7 +735,7 @@ function parseVid(link){
   return m?m[1]:null;
 }
 function setMusicUI(playing){
-  musicIco.textContent = playing ? '❚❚' : '▶';
+  musicIco.className = 'ico ' + (playing ? 'pause' : 'play'); musicIco.textContent = '';
   musicLabel.textContent = playing ? '일시정지' : '음악 재생';
   const eq=nowPlaying.querySelector('.eq');
   if(eq) eq.classList.toggle('on', !!playing);
@@ -744,7 +756,7 @@ function setNowPlaying(text, playing, rise){
 // 여기서 재생이 막힌 곡 — 버튼을 '유튜브에서 듣기'로 바꿔 새 창으로 연다
 const blockedVids=new Set();
 function showBlocked(){
-  musicIco.textContent='↗';
+  musicIco.className='ico out'; musicIco.textContent='↗';
   musicLabel.textContent='유튜브에서 듣기';
   nowPlaying.textContent='이 곡은 유튜브에서만 들을 수 있어요';
 }
